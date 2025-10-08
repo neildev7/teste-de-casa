@@ -90,5 +90,26 @@ class GameController extends Controller
             'enemy_hp' => max(0, $enemyHp),
         ]);
     }
+
+    public function update(Request $request, $id)
+{
+    $character = Character::findOrFail($id);
+    $request->validate([
+        'name' => 'required|string|max:50'
+    ]);
+    $character->name = $request->name;
+    $character->save();
+
+    return response()->json(['success' => true]);
+}
+
+public function destroy($id)
+{
+    $character = Character::findOrFail($id);
+    $character->delete();
+
+    return response()->json(['success' => true]);
+}
+
 }
 

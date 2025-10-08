@@ -1,226 +1,582 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>RPG - {{ $character->name }}</title>
+<title>Batalha Épica | {{ $character->name }}</title>
+<link rel="icon" href= "img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+
 <style>
-body {
-    font-family: monospace;
-    background: #111;
-    color: #0f0;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-h1 {
-    text-align: center;
-    margin-bottom: 20px;
-}
-.game-container {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-.card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: #000;
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid #0f0;
-    width: 300px;
-    text-align: center;
-    transition: transform 0.3s;
-}
-.card:hover {
-    transform: scale(1.03);
-}
-.avatar {
-    width: 120px;
-    border-radius: 10px;
-    margin-bottom: 10px;
-}
-.bar-container {
-    background: #222;
-    width: 100%;
-    height: 14px;
-    border-radius: 10px;
-    margin: 5px 0;
-}
-.bar {
-    height: 100%;
-    border-radius: 10px;
-    transition: width 0.3s;
-}
-.hp {
-    background: #0f0;
-}
-.mp {
-    background: #0ff;
-}
-.actions {
-    margin-top: 10px;
-}
-button {
-    background: #0f0;
-    color: #111;
-    border: none;
-    padding: 10px;
-    margin: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    border-radius: 5px;
-}
-button:hover {
-    background: #9f9;
-}
-.console {
-    background: #000;
-    padding: 15px;
-    border: 1px solid #0f0;
-    height: 200px;
-    overflow-y: auto;
-    width: 640px;
-}
-.highlight {
-    color: #ff0;
-    font-weight: bold;
-}
+    :root {
+        --wood-color: #5d4037;
+        --metal-color: #a9a9a9;
+        --gold-color: #ffd700;
+        --text-light: #f0e9d9;
+        --hp-color: #9e2b25;
+        --mp-color: #3b5a9d;
+        --xp-color: #c7923e;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'IM Fell English', serif;
+        background: #111 url("{{ asset('img/giphy.gif') }}") no-repeat center center fixed;
+        background-size: cover;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        background-blend-mode: multiply;
+        overflow: hidden;
+    }
+    
+    .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: -1; }
+
+    /* --- TELA DE BATALHA E LAYOUT --- */
+    .battle-screen {
+        width: 100%;
+        max-width: 1200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        opacity: 0;
+        animation: fadeIn 1s forwards;
+    }
+
+    .combatants-area {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 50px;
+        width: 100%;
+    }
+
+    /* --- CARDS DOS COMBATENTES --- */
+    .combatant-card {
+        position: relative;
+        width: 350px;
+        background-color: var(--wood-color);
+        border: 10px solid;
+        border-image: linear-gradient(45deg, var(--metal-color), #8b8b8b) 1;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        color: var(--text-light);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .combatant-card h2 {
+        font-family: 'IM Fell English SC', serif;
+        color: var(--gold-color);
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .combatant-avatar {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 4px solid var(--gold-color);
+        margin-bottom: 15px;
+        object-fit: cover;
+        background-color: #222;
+    }
+    
+    /* --- BARRAS DE STATUS (HP, MP, XP) --- */
+    .stat-bar {
+        width: 100%;
+        height: 22px;
+        background-color: rgba(0, 0, 0, 0.4);
+        border: 1px solid var(--metal-color);
+        border-radius: 5px;
+        margin-bottom: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease-out;
+    }
+    .stat-bar-fill.hp { background: var(--hp-color); }
+    .stat-bar-fill.mp { background: var(--mp-color); }
+    .stat-bar-fill.xp { background: var(--xp-color); }
+
+    .stat-bar-text {
+        position: absolute;
+        inset: 0;
+        font-family: 'Cinzel', serif;
+        font-weight: 700;
+        font-size: 0.8rem;
+        color: white;
+        text-shadow: 1px 1px 2px black;
+        line-height: 22px;
+    }
+    
+    /* --- BOTÕES DE AÇÃO --- */
+    .actions-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 15px;
+        width: 100%;
+    }
+
+    .action-btn {
+        background: var(--metal-color);
+        color: var(--wood-color);
+        border: 3px outset var(--metal-color);
+        padding: 12px 5px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+        font-family: 'Cinzel', serif;
+    }
+    .action-btn:hover:not(:disabled) {
+        background: var(--gold-color);
+        transform: translateY(-2px);
+    }
+    .action-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* --- LOG DE BATALHA --- */
+    .battle-log {
+        width: 100%;
+        max-width: 800px;
+        height: 180px;
+        background: rgba(0,0,0,0.6);
+        border: 2px solid var(--metal-color);
+        padding: 15px;
+        overflow-y: auto;
+        color: var(--text-light);
+        font-size: 1.1rem;
+        line-height: 1.6;
+        scroll-behavior: smooth;
+    }
+    .battle-log p { margin-bottom: 5px; }
+    .log-player { color: #87ceeb; }
+    .log-enemy { color: #f08080; }
+    .log-system { color: #fafad2; font-style: italic; }
+    .log-heal { color: #90ee90; }
+    .log-crit { color: var(--gold-color); font-weight: bold; }
+    .log-lvlup { color: var(--gold-color); font-family: 'Cinzel', serif; font-size: 1.2rem; }
+
+    /* --- ANIMAÇÕES E EFEITOS --- */
+    .damage-popup {
+        position: absolute;
+        top: 30%;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: 'Cinzel', serif;
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #ff4500;
+        text-shadow: 2px 2px 2px black;
+        animation: damagePopup 1s forwards;
+        pointer-events: none;
+    }
+    .crit { color: var(--gold-color); }
+    .heal { color: #90ee90; }
+
+    .shake { animation: shake 0.4s; }
+    .flash-red { animation: flashRed 0.4s; }
+
+    /* --- MODAL DE FIM DE JOGO --- */
+    .endgame-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.5s;
+    }
+    .endgame-modal.visible {
+        opacity: 1;
+        pointer-events: all;
+    }
+    .modal-content {
+        background-color: var(--wood-color);
+        border: 10px solid var(--gold-color);
+        padding: 40px;
+        text-align: center;
+        animation: fadeIn 0.5s;
+    }
+    .modal-content h2 { font-family: 'IM Fell English SC', serif; font-size: 4rem; color: var(--gold-color); }
+    .modal-content p { color: var(--text-light); font-size: 1.5rem; margin: 20px 0; }
+    .modal-content a {
+        display: inline-block;
+        margin-top: 20px;
+        background: var(--gold-color);
+        color: var(--wood-color);
+        padding: 15px 30px;
+        font-family: 'Cinzel', serif;
+        text-decoration: none;
+        font-weight: bold;
+    }
+
+    /* --- KEYFRAMES --- */
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes damagePopup {
+        0% { transform: translate(-50%, 0); opacity: 1; }
+        100% { transform: translate(-50%, -80px); opacity: 0; }
+    }
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        50% { transform: translateX(5px); }
+        75% { transform: translateX(-5px); }
+    }
+    @keyframes flashRed {
+        0%, 100% { background-color: var(--wood-color); }
+        50% { background-color: #581111; }
+    }
 </style>
 </head>
 <body>
+<div class="overlay"></div>
 
-<h1>👾 {{ $character->name }} entra na aventura!</h1>
+<div class="battle-screen">
+    <div class="combatants-area">
+        <div class="combatant-card" id="playerCard">
+            <h2 id="playerName">{{ $character->name }}</h2>
+            <img src="{{ asset($character->avatar) }}" class="combatant-avatar" alt="Avatar do Jogador">
+            
+            <div class="stat-bar"><div class="stat-bar-fill hp" id="playerHpBar"></div><div class="stat-bar-text" id="playerHpText"></div></div>
+            <div class="stat-bar"><div class="stat-bar-fill mp" id="playerMpBar"></div><div class="stat-bar-text" id="playerMpText"></div></div>
+            <div class="stat-bar"><div class="stat-bar-fill xp" id="playerXpBar"></div><div class="stat-bar-text" id="playerXpText"></div></div>
 
+            <div class="actions-grid" id="actionsGrid">
+                </div>
+        </div>
 
-<div class="game-container">
-    <div class="card">
-        <img src="{{ asset($character->avatar) }}" class="avatar" alt="avatar">
-        <h2 id="playerName">{{ $character->name }} (Lv {{ $character->level }})</h2>
-        <div class="bar-container"><div class="bar hp" id="playerHpBar" style="width:100%"></div></div>
-        <div class="bar-container"><div class="bar mp" id="playerMpBar" style="width:100%"></div></div>
-        <p id="playerStats">HP: {{ $character->hp }} | MP: {{ $character->mp }} | Poções: 3 | XP: 0 | Lv: {{ $character->level }}</p>
-        <div class="actions">
-            <button id="attackBtn">Ataque ⚔️</button>
-            <button id="skillBtn">Habilidade ✨ (10 MP)</button>
-            <button id="ultimateBtn">Ultimate 🔥 (20 MP)</button>
-            <button id="itemBtn">Poção ❤️</button>
+        <div class="combatant-card" id="enemyCard">
+            <h2 id="enemyName">Goblin</h2>
+            <img src="{{ asset('img/goblin.png') }}" class="combatant-avatar" id="enemyAvatar" alt="Avatar do Inimigo">
+            <div class="stat-bar"><div class="stat-bar-fill hp" id="enemyHpBar"></div><div class="stat-bar-text" id="enemyHpText"></div></div>
         </div>
     </div>
 
-    <div class="card" id="enemyCard">
-        <img src="{{ asset('img/goblin.png') }}" class="avatar" alt="Inimigo">
-        <h2 id="enemyName">Goblin</h2>
-        <div class="bar-container"><div class="bar hp" id="enemyHpBar" style="width:100%"></div></div>
-        <p id="enemyStats">HP: 30</p>
+    <div class="battle-log" id="battleLog"></div>
+</div>
+
+<div class="endgame-modal" id="endgameModal">
+    <div class="modal-content">
+        <h2 id="modalTitle"></h2>
+        <p id="modalText"></p>
+        <a href="{{ route('home') }}">Voltar para o Guild Hall</a>
     </div>
 </div>
 
-<div class="console" id="console"><p>Um inimigo aparece!</p></div>
-
 <script>
-const consoleBox = document.getElementById('console');
-const attackBtn = document.getElementById('attackBtn');
-const skillBtn = document.getElementById('skillBtn');
-const ultimateBtn = document.getElementById('ultimateBtn');
-const itemBtn = document.getElementById('itemBtn');
+// ===================================================================================
+//  MOTOR DE COMBATE RPG - V2.0
+// ===================================================================================
+const Game = {
+    // --- ESTADO DO JOGO ---
+    state: {
+        player: {
+            name: "{{ $character->name }}",
+            hp: {{ $character->hp }}, maxHp: {{ $character->hp }},
+            mp: {{ $character->mp }}, maxMp: {{ $character->mp }},
+            attack: {{ $character->attack }}, defense: {{ $character->defense }},
+            sp_attack: {{ $character->special_attack }}, sp_defense: {{ $character->special_defense }},
+            speed: {{ $character->speed }},
+            level: {{ $character->level }}, xp: 0, xpToNextLevel: 50,
+            potions: 3
+        },
+        enemy: {},
+        enemies: [
+            { name:"Goblin", hp:30, attack:8, defense:3, speed: 10, img:"{{ asset('img/goblin.png') }}", xp: 25, specialChance: 0.1 },
+            { name:"Orc", hp:60, attack:12, defense:6, speed: 8, img:"{{ asset('img/orc.png') }}", xp: 50, specialChance: 0.25 },
+            { name:"Dragão", hp:100, attack:18, defense:10, speed: 12, img:"{{ asset('img/dragao.png') }}", xp: 100, specialChance: 0.4 }
+        ],
+        currentEnemyIndex: 0,
+        gameState: 'PLAYER_TURN', // PLAYER_TURN, ENEMY_TURN, PROCESSING, GAME_OVER
+    },
 
-const playerHpBar = document.getElementById('playerHpBar');
-const playerMpBar = document.getElementById('playerMpBar');
-const playerStats = document.getElementById('playerStats');
-const playerName = document.getElementById('playerName');
-const enemyCard = document.getElementById('enemyCard');
-const enemyHpBar = document.getElementById('enemyHpBar');
-const enemyName = document.getElementById('enemyName');
-const enemyStats = document.getElementById('enemyStats');
+    // --- ELEMENTOS DO DOM ---
+    elements: {
+        player: { card: document.getElementById('playerCard'), name: document.getElementById('playerName'), hpBar: document.getElementById('playerHpBar'), hpText: document.getElementById('playerHpText'), mpBar: document.getElementById('playerMpBar'), mpText: document.getElementById('playerMpText'), xpBar: document.getElementById('playerXpBar'), xpText: document.getElementById('playerXpText'), actions: document.getElementById('actionsGrid') },
+        enemy: { card: document.getElementById('enemyCard'), name: document.getElementById('enemyName'), hpBar: document.getElementById('enemyHpBar'), hpText: document.getElementById('enemyHpText'), avatar: document.getElementById('enemyAvatar') },
+        log: document.getElementById('battleLog'),
+        modal: { container: document.getElementById('endgameModal'), title: document.getElementById('modalTitle'), text: document.getElementById('modalText') }
+    },
 
-let player = {
-    hp: {{ $character->hp }}, maxHp: {{ $character->hp }},
-    mp: {{ $character->mp }}, maxMp: {{ $character->mp }},
-    attack: {{ $character->attack }}, defense: {{ $character->defense }},
-    potions: 3, level: {{ $character->level }}, xp:0, xpNext:50
+    // --- AÇÕES DO JOGADOR (Baseado em dados) ---
+    actions: {
+        attack: { name: 'Ataque Físico ⚔️', cost: 0, type: 'mp', target: 'enemy', basePower: 1, stat: 'attack' },
+        skill: { name: 'Feitiço Menor ✨ (10MP)', cost: 10, type: 'mp', target: 'enemy', basePower: 1.5, stat: 'sp_attack' },
+        ultimate: { name: 'Explosão Arcana 🔥 (25MP)', cost: 25, type: 'mp', target: 'enemy', basePower: 2.5, stat: 'sp_attack' },
+        potion: { name: 'Usar Poção ❤️', cost: 1, type: 'potion', target: 'player', basePower: 40, stat: 'heal' },
+    },
+
+    // --- INICIALIZAÇÃO ---
+    init() {
+        this.loadEnemy();
+        this.renderActionButtons();
+        this.updateUI();
+        this.logMessage('Um ' + this.state.enemy.name + ' selvagem aparece!', 'log-system');
+    },
+    
+    // --- LÓGICA DE TURNOS ---
+    executeTurn(actionKey) {
+        if (this.state.gameState !== 'PLAYER_TURN') return;
+        this.setGameState('PROCESSING');
+
+        const action = this.actions[actionKey];
+        
+        // Validação de custo
+        if (action.type === 'mp' && this.state.player.mp < action.cost) {
+            this.logMessage('MP insuficiente!', 'log-system');
+            this.setGameState('PLAYER_TURN');
+            return;
+        }
+        if (action.type === 'potion' && this.state.player.potions < action.cost) {
+            this.logMessage('Sem poções!', 'log-system');
+            this.setGameState('PLAYER_TURN');
+            return;
+        }
+
+        // Pagar custo
+        if (action.type === 'mp') this.state.player.mp -= action.cost;
+        if (action.type === 'potion') this.state.player.potions--;
+
+        // Executar ação
+        this.logMessage(`${this.state.player.name} usou ${action.name}!`, 'log-player');
+
+        // Lógica de dano e cura
+        let value = 0;
+        let isCrit = false;
+
+        if (action.stat === 'heal') {
+            value = action.basePower;
+            this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + value);
+            this.showPopup(value, this.elements.player.card, true);
+            this.logMessage(`${this.state.player.name} recuperou ${value} de HP.`, 'log-heal');
+        } else {
+            const power = this.state.player[action.stat] * action.basePower;
+            const defense = (action.stat === 'attack') ? this.state.enemy.defense : 0; // Simplificado
+            
+            // Cálculo de dano com variação e crítico
+            let damage = Math.floor(Math.max(1, (power - defense) * (Math.random() * 0.4 + 0.8)));
+            if (Math.random() < 0.15) { // 15% de chance de crítico
+                damage = Math.floor(damage * 1.5);
+                isCrit = true;
+                this.logMessage('Acerto Crítico!', 'log-crit');
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 400);
+            }
+            this.state.enemy.hp -= damage;
+            this.elements.enemy.card.classList.add('flash-red');
+            setTimeout(() => this.elements.enemy.card.classList.remove('flash-red'), 400);
+            this.showPopup(damage, this.elements.enemy.card, false, isCrit);
+        }
+        
+        this.updateUI();
+
+        // Checar se o inimigo foi derrotado
+        if (this.state.enemy.hp <= 0) {
+            this.logMessage(`${this.state.enemy.name} foi derrotado!`, 'log-system');
+            this.gainXP(this.state.enemy.xp);
+            setTimeout(() => this.nextEnemy(), 1500);
+            return;
+        }
+
+        // Próximo turno (inimigo)
+        setTimeout(() => this.enemyTurn(), 1500);
+    },
+
+    enemyTurn() {
+        this.setGameState('ENEMY_TURN');
+        this.logMessage(`Turno de ${this.state.enemy.name}.`, 'log-system');
+        
+        // IA Simples: chance de usar um ataque especial
+        let damage;
+        if (Math.random() < this.state.enemy.specialChance) {
+            damage = Math.floor(Math.max(1, (this.state.enemy.attack * 1.5 - this.state.player.defense) * (Math.random() * 0.4 + 0.8)));
+             this.logMessage(`${this.state.enemy.name} usa um ATAQUE PODEROSO!`, 'log-enemy');
+        } else {
+            damage = Math.floor(Math.max(1, (this.state.enemy.attack - this.state.player.defense) * (Math.random() * 0.4 + 0.8)));
+            this.logMessage(`${this.state.enemy.name} ataca!`, 'log-enemy');
+        }
+
+        this.state.player.hp -= damage;
+        this.elements.player.card.classList.add('flash-red');
+        setTimeout(() => this.elements.player.card.classList.remove('flash-red'), 400);
+        this.showPopup(damage, this.elements.player.card, false);
+
+        // Regeneração de MP do jogador
+        this.state.player.mp = Math.min(this.state.player.maxMp, this.state.player.mp + 5);
+
+        this.updateUI();
+
+        // Checar se o jogador foi derrotado
+        if (this.state.player.hp <= 0) {
+            this.logMessage('Você foi derrotado...', 'log-system');
+            this.gameOver(false);
+            return;
+        }
+
+        setTimeout(() => this.setGameState('PLAYER_TURN'), 1000);
+    },
+
+    // --- LÓGICA DE PROGRESSÃO ---
+    gainXP(amount) {
+        this.logMessage(`${this.state.player.name} ganhou ${amount} XP!`, 'log-system');
+        this.state.player.xp += amount;
+        while (this.state.player.xp >= this.state.player.xpToNextLevel) {
+            this.state.player.xp -= this.state.player.xpToNextLevel;
+            this.state.player.level++;
+            this.state.player.xpToNextLevel = Math.floor(this.state.player.xpToNextLevel * 1.5);
+            
+            // Aumentar stats
+            this.state.player.maxHp += 15;
+            this.state.player.maxMp += 10;
+            this.state.player.attack += 3;
+            this.state.player.defense += 2;
+            this.state.player.sp_attack += 3;
+
+            // Cura total no level up
+            this.state.player.hp = this.state.player.maxHp;
+            this.state.player.mp = this.state.player.maxMp;
+
+            this.logMessage(`LEVEL UP! Você alcançou o Nível ${this.state.player.level}!`, 'log-lvlup');
+        }
+        this.updateUI();
+    },
+
+    nextEnemy() {
+        this.state.currentEnemyIndex++;
+        if (this.state.currentEnemyIndex >= this.state.enemies.length) {
+            this.gameOver(true);
+            return;
+        }
+        this.loadEnemy();
+        this.updateUI();
+        this.logMessage(`Um novo oponente surge: ${this.state.enemy.name}!`, 'log-system');
+        this.setGameState('PLAYER_TURN');
+    },
+    
+    loadEnemy() {
+        this.state.enemy = { ...this.state.enemies[this.state.currentEnemyIndex] };
+        this.state.enemy.maxHp = this.state.enemy.hp; // Guarda o HP máximo para a barra
+    },
+    
+    gameOver(isVictory) {
+        this.setGameState('GAME_OVER');
+        
+        if (isVictory) {
+            this.elements.modal.title.textContent = "VITÓRIA!";
+            this.elements.modal.text.textContent = "O segredo é...";
+
+            // Aguarda um pouco antes de começar a digitar o segredo
+            setTimeout(() => {
+                const secretMessage = "Programação não é mágica!";
+                const textElement = this.elements.modal.text;
+                let i = 0;
+                
+                // Limpa o texto para começar a digitar
+                textElement.textContent = "";
+
+                const typingInterval = setInterval(() => {
+                    if (i < secretMessage.length) {
+                        textElement.textContent += secretMessage.charAt(i);
+                        i++;
+                    } else {
+                        // Para o intervalo quando a mensagem estiver completa
+                        clearInterval(typingInterval);
+                    }
+                }, 100); // Velocidade da digitação (100ms por letra)
+
+            }, 2000); // Atraso inicial de 2 segundos
+
+        } else {
+            this.elements.modal.title.textContent = "Fim de Jogo";
+            this.elements.modal.text.textContent = "Sua jornada termina aqui...";
+        }
+        
+        this.elements.modal.container.classList.add('visible');
+    },
+    
+    // --- FUNÇÕES DE UI E UTILITÁRIOS ---
+    updateUI() {
+        const { player, enemy } = this.state;
+        const { player: playerEl, enemy: enemyEl } = this.elements;
+
+        // Player UI
+        playerEl.name.textContent = `${player.name} (Lvl ${player.level})`;
+        playerEl.hpBar.style.width = `${Math.max(0, player.hp / player.maxHp * 100)}%`;
+        playerEl.hpText.textContent = `HP: ${Math.max(0, player.hp)} / ${player.maxHp}`;
+        playerEl.mpBar.style.width = `${Math.max(0, player.mp / player.maxMp * 100)}%`;
+        playerEl.mpText.textContent = `MP: ${Math.max(0, player.mp)} / ${player.maxMp}`;
+        playerEl.xpBar.style.width = `${Math.max(0, player.xp / player.xpToNextLevel * 100)}%`;
+        playerEl.xpText.textContent = `XP: ${player.xp} / ${player.xpToNextLevel}`;
+
+        // Enemy UI
+        enemyEl.name.textContent = enemy.name;
+        enemyEl.avatar.src = enemy.img;
+        enemyEl.hpBar.style.width = `${Math.max(0, enemy.hp / enemy.maxHp * 100)}%`;
+        enemyEl.hpText.textContent = `HP: ${Math.max(0, enemy.hp)} / ${enemy.maxHp}`;
+    },
+    
+    renderActionButtons() {
+        this.elements.player.actions.innerHTML = '';
+        for (const key in this.actions) {
+            const action = this.actions[key];
+            const btn = document.createElement('button');
+            btn.className = 'action-btn';
+            btn.textContent = action.name;
+            btn.onclick = () => this.executeTurn(key);
+            this.elements.player.actions.appendChild(btn);
+        }
+    },
+
+    logMessage(message, className = '') {
+        const p = document.createElement('p');
+        p.innerHTML = message;
+        if (className) p.className = className;
+        this.elements.log.appendChild(p);
+        this.elements.log.scrollTop = this.elements.log.scrollHeight;
+    },
+
+    showPopup(text, targetCard, isHeal = false, isCrit = false) {
+        const popup = document.createElement('div');
+        popup.className = 'damage-popup';
+        popup.textContent = text;
+        if (isHeal) popup.classList.add('heal');
+        if (isCrit) popup.classList.add('crit');
+        targetCard.appendChild(popup);
+        setTimeout(() => popup.remove(), 1000);
+    },
+
+    setGameState(newState) {
+        this.state.gameState = newState;
+        // Habilita/desabilita botões baseado no estado
+        const buttons = this.elements.player.actions.querySelectorAll('button');
+        buttons.forEach(btn => btn.disabled = (newState !== 'PLAYER_TURN'));
+    }
 };
 
-const phases = [
-    { name:"Goblin", hp:30, attack:8, defense:3, img:"{{ asset('img/goblin.png') }}", gold:5 },
-    { name:"Orc", hp:50, attack:12, defense:6, img:"{{ asset('img/orc.png') }}", gold:10 },
-    { name:"Dragão", hp:80, attack:18, defense:10, img:"{{ asset('img/dragao.png') }}", gold:20 }
-];
-
-let phaseIndex=0;
-let enemy = {...phases[phaseIndex]};
-
-// Funções utilitárias
-function log(msg, cls="") { consoleBox.innerHTML += `<p class="${cls}">${msg}</p>`; consoleBox.scrollTop = consoleBox.scrollHeight; }
-function updateUI() {
-    playerHpBar.style.width = Math.max(0,(player.hp/player.maxHp)*100)+"%";
-    playerMpBar.style.width = Math.max(0,(player.mp/player.maxMp)*100)+"%";
-    playerStats.innerText = `HP: ${Math.max(0,player.hp)} | MP: ${Math.max(0,player.mp)} | Poções: ${player.potions} | XP: ${player.xp}/${player.xpNext} | Lv: ${player.level}`;
-    enemyName.innerText = enemy.name;
-    enemyHpBar.style.width = Math.max(0,(enemy.hp/phases[phaseIndex].hp)*100)+"%";
-    enemyStats.innerText = `HP: ${Math.max(0,enemy.hp)}`;
-}
-
-function calculateDamage(base, def) {
-    let crit = Math.random()<0.15; let dmg=Math.max(1, base-def+Math.floor(Math.random()*5)-2);
-    if(crit) { dmg*=2; log("✨ Acerto crítico!","highlight"); }
-    return dmg;
-}
-
-function gainXP(amount){
-    player.xp += amount;
-    log(`🎉 Ganhou ${amount} XP!`);
-    while(player.xp >= player.xpNext){
-        player.xp -= player.xpNext;
-        player.level++;
-        let gain=20;
-        player.maxHp+=gain; player.hp=player.maxHp;
-        player.maxMp+=gain; player.mp=player.maxMp;
-        player.attack+=gain; player.defense+=gain;
-        player.xpNext = Math.floor(player.xpNext*1.5);
-        log(`🎆 Subiu para Lv ${player.level}! Todos os stats aumentaram +${gain}`,"highlight");
-    }
-}
-
-// Turno inimigo
-function enemyTurn(){
-    if(enemy.hp<=0){ gainXP(enemy.hp*0+20); loot(); nextEnemy(); return; }
-    let dmg = calculateDamage(enemy.attack,player.defense);
-    player.hp-=dmg; log(`${enemy.name} atacou causando ${dmg} de dano!`);
-    if(player.hp<=0){ log("💀 Você foi derrotado! Game Over!","highlight"); disableAll(); }
-    player.mp+=2; if(player.mp>player.maxMp) player.mp=player.maxMp;
-    updateUI();
-}
-
-// Próximo inimigo
-function nextEnemy(){
-    phaseIndex++;
-    if(phaseIndex>=phases.length){ log("🏆 Todos os inimigos derrotados! Vitória final!","highlight"); disableAll(); return; }
-    enemy={...phases[phaseIndex]};
-    enemyCard.querySelector('img').src=enemy.img;
-    log(`🚨 Novo inimigo: ${enemy.name}!`,"highlight");
-    updateUI();
-}
-
-// Loot automático
-function loot(){ 
-    let pot = Math.random()<0.5?1:0; 
-    player.potions+=pot; 
-    if(pot>0) log(`🧪 Você encontrou 1 poção!`); 
-}
-
-// Ações do jogador
-function disableAll(){ attackBtn.disabled=true; skillBtn.disabled=true; ultimateBtn.disabled=true; itemBtn.disabled=true; }
-attackBtn.onclick=()=>{ if(player.hp<=0||enemy.hp<=0)return; enemy.hp-=calculateDamage(player.attack,enemy.defense); log("Você atacou!"); enemyTurn(); };
-skillBtn.onclick=()=>{ if(player.hp<=0||enemy.hp<=0)return; if(player.mp<10){log("❌ MP insuficiente!");return;} player.mp-=10; enemy.hp-=calculateDamage(player.attack+5,enemy.defense); log("Você usou Habilidade!"); enemyTurn(); };
-ultimateBtn.onclick=()=>{ if(player.hp<=0||enemy.hp<=0)return; if(player.mp<20){log("❌ MP insuficiente!");return;} player.mp-=20; enemy.hp-=calculateDamage(player.attack+15,enemy.defense); log("🔥 Ultimate usada!"); enemyTurn(); };
-itemBtn.onclick=()=>{ if(player.potions<=0){log("❌ Sem poções!");return;} player.potions--; let heal=30; player.hp+=heal;if(player.hp>player.maxHp)player.hp=player.maxHp; log(`🧪 Poção usada! Recuperou ${heal} HP!`); enemyTurn(); };
-
-// Inicializa
-updateUI();
+// Iniciar o jogo quando a página carregar
+document.addEventListener('DOMContentLoaded', () => Game.init());
 </script>
 </body>
 </html>
