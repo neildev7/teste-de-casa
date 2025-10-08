@@ -4,45 +4,119 @@
 <meta charset="UTF-8">
 <title>RPG - {{ $character->name }}</title>
 <style>
-body { font-family: monospace; background:#111; color:#0f0; padding:20px; display:flex; flex-direction:column; align-items:center;}
-h1 { text-align:center; }
-.card { display:inline-block; background:#000; padding:20px; border-radius:10px; border:1px solid #0f0; margin:10px; width:250px; text-align:center; transition: transform 0.3s; }
-.card:hover { transform: scale(1.03); }
-.avatar { width:100px; border-radius:10px; }
-.bar-container { background:#222; width:100%; height:14px; border-radius:10px; margin:5px 0; }
-.bar { height:100%; border-radius:10px; transition: width 0.3s; }
-.hp { background:#0f0; }
-.mp { background:#0ff; }
-.actions { margin-top:10px; }
-button { background:#0f0; color:#111; border:none; padding:10px; margin:5px; cursor:pointer; font-weight:bold; border-radius:5px; }
-button:hover { background:#9f9; }
-.console { background:#000; padding:15px; border:1px solid #0f0; height:200px; overflow-y:auto; margin-top:20px; width:520px; }
-.highlight { color:#ff0; font-weight:bold; }
+body {
+    font-family: monospace;
+    background: #111;
+    color: #0f0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.game-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #000;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #0f0;
+    width: 300px;
+    text-align: center;
+    transition: transform 0.3s;
+}
+.card:hover {
+    transform: scale(1.03);
+}
+.avatar {
+    width: 120px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+.bar-container {
+    background: #222;
+    width: 100%;
+    height: 14px;
+    border-radius: 10px;
+    margin: 5px 0;
+}
+.bar {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s;
+}
+.hp {
+    background: #0f0;
+}
+.mp {
+    background: #0ff;
+}
+.actions {
+    margin-top: 10px;
+}
+button {
+    background: #0f0;
+    color: #111;
+    border: none;
+    padding: 10px;
+    margin: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 5px;
+}
+button:hover {
+    background: #9f9;
+}
+.console {
+    background: #000;
+    padding: 15px;
+    border: 1px solid #0f0;
+    height: 200px;
+    overflow-y: auto;
+    width: 640px;
+}
+.highlight {
+    color: #ff0;
+    font-weight: bold;
+}
 </style>
 </head>
 <body>
 
 <h1>👾 {{ $character->name }} entra na aventura!</h1>
 
-<div class="card">
-  <img src="{{ asset($character->avatar) }}" class="avatar" alt="avatar">
-  <h2 id="playerName">{{ $character->name }} (Lv {{ $character->level }})</h2>
-  <div class="bar-container"><div class="bar hp" id="playerHpBar" style="width:100%"></div></div>
-  <div class="bar-container"><div class="bar mp" id="playerMpBar" style="width:100%"></div></div>
-  <p id="playerStats">HP: {{ $character->hp }} | MP: {{ $character->mp }} | Poções: 3 | XP: 0 | Lv: {{ $character->level }}</p>
-  <div class="actions">
-    <button id="attackBtn">Ataque ⚔️</button>
-    <button id="skillBtn">Habilidade ✨ (10 MP)</button>
-    <button id="ultimateBtn">Ultimate 🔥 (20 MP)</button>
-    <button id="itemBtn">Poção ❤️</button>
-  </div>
-</div>
 
-<div class="card" id="enemyCard">
-  <img src="{{ asset('img/goblin.png') }}" class="avatar" alt="Inimigo">
-  <h2 id="enemyName">Goblin</h2>
-  <div class="bar-container"><div class="bar hp" id="enemyHpBar" style="width:100%"></div></div>
-  <p id="enemyStats">HP: 30</p>
+<div class="game-container">
+    <div class="card">
+        <img src="{{ asset($character->avatar) }}" class="avatar" alt="avatar">
+        <h2 id="playerName">{{ $character->name }} (Lv {{ $character->level }})</h2>
+        <div class="bar-container"><div class="bar hp" id="playerHpBar" style="width:100%"></div></div>
+        <div class="bar-container"><div class="bar mp" id="playerMpBar" style="width:100%"></div></div>
+        <p id="playerStats">HP: {{ $character->hp }} | MP: {{ $character->mp }} | Poções: 3 | XP: 0 | Lv: {{ $character->level }}</p>
+        <div class="actions">
+            <button id="attackBtn">Ataque ⚔️</button>
+            <button id="skillBtn">Habilidade ✨ (10 MP)</button>
+            <button id="ultimateBtn">Ultimate 🔥 (20 MP)</button>
+            <button id="itemBtn">Poção ❤️</button>
+        </div>
+    </div>
+
+    <div class="card" id="enemyCard">
+        <img src="{{ asset('img/goblin.png') }}" class="avatar" alt="Inimigo">
+        <h2 id="enemyName">Goblin</h2>
+        <div class="bar-container"><div class="bar hp" id="enemyHpBar" style="width:100%"></div></div>
+        <p id="enemyStats">HP: 30</p>
+    </div>
 </div>
 
 <div class="console" id="console"><p>Um inimigo aparece!</p></div>
