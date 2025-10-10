@@ -22,18 +22,11 @@ class GameController extends Controller
         $character = Character::create([
             'name' => $request->name,
             'avatar' => $request->avatar,
-            'hp' => 100,
-            'mp' => 50,
-            'attack' => 10,
-            'defense' => 10,
-            'speed' => 10,
-            'special_attack' => 10,
-            'special_defense' => 10,
-            'level' => 1,
-            'exp' => 0,
+            'hp' => 100, 'mp' => 50, 'attack' => 10, 'defense' => 10,
+            'speed' => 10, 'special_attack' => 10, 'special_defense' => 10,
+            'level' => 1, 'exp' => 0,
         ]);
 
-        // Redireciona para o tutorial
         return redirect()->route('character.tutorial', $character->id);
     }
 
@@ -63,24 +56,38 @@ class GameController extends Controller
             'special_defense' => 'required|integer|min:0',
         ]);
 
-        // Atualiza os atributos
         $character->update($request->only([
             'hp','mp','attack','defense','speed','special_attack','special_defense'
         ]));
-
+        
         return redirect()->route('character.play', $character->id);
     }
 
-    public function index($id)
+    public function play($id)
     {
         $character = Character::findOrFail($id);
         return view('game.play', compact('character'));
     }
 
+    // ===== MÉTODO CORRIGIDO =====
+    public function play2($id) // Trocado de $characterId para $id
+    {
+        $character = Character::findOrFail($id);
+        // Adicionado 'game.' para consistência
+        return view('game.play2', compact('character'));
+    }
+
+    // ===== MÉTODO CORRIGIDO E SIMPLIFICADO =====
+    public function play3($id)
+    {
+        $character = Character::findOrFail($id); // Simplificado
+        // Adicionado 'game.' para consistência
+        return view('game.play3', compact('character'));
+    }
+
     public function attack(Request $request)
     {
         $character = Character::findOrFail($request->id);
-
         $enemyHp = 50;
         $damage = $character->attack - rand(0,5);
         $enemyHp -= $damage;
@@ -92,24 +99,46 @@ class GameController extends Controller
     }
 
     public function update(Request $request, $id)
+    {
+        $character = Character::findOrFail($id);
+        $request->validate([ 'name' => 'required|string|max:50' ]);
+        $character->name = $request->name;
+        $character->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    // DENTRO DE app/Http/Controllers/GameController.php
+
+// ... (depois dos seus outros métodos)
+
+public function saveProgress(Request $request, $id)
 {
     $character = Character::findOrFail($id);
-    $request->validate([
-        'name' => 'required|string|max:50'
+
+    // Atualiza o personagem com os dados recebidos do JavaScript
+    $character->update([
+        'hp' => $request->input('maxHp'), // Salva o HP máximo
+        'mp' => $request->input('maxMp'), // Salva o MP máximo
+        'attack' => $request->input('attack'),
+        'defense' => $request->input('defense'),
+        'special_attack' => $request->input('sp_attack'),
+        'special_defense' => $request->input('sp_defense'),
+        'speed' => $request->input('speed'),
+        'level' => $request->input('level'),
+        'exp' => $request->input('xp'),
     ]);
-    $character->name = $request->name;
-    $character->save();
 
     return response()->json(['success' => true]);
 }
 
-public function destroy($id)
-{
-    $character = Character::findOrFail($id);
-    $character->delete();
 
-    return response()->json(['success' => true]);
+
+    public function destroy($id)
+    {
+        $character = Character::findOrFail($id);
+        $character->delete();
+
+        return response()->json(['success' => true]);
+    }
 }
-
-}
-
