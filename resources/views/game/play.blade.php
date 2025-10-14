@@ -3,204 +3,396 @@
 <head>
 <meta charset="UTF-8">
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Batalha Épica | {{ $character->name }}</title>
 <link rel="icon" href="{{ asset('img/logo.png') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
 <style>
     :root {
-        --wood-color: #5d4037;
-        --metal-color: #a9a9a9;
-        --gold-color: #ffd700;
-        --text-light: #f0e9d9;
-        --hp-color: #9e2b25;
-        --mp-color: #3b5a9d;
-        --xp-color: #c7923e;
+        --bg-dark: #1a1c2c; --ui-main: #5a3a2b; --ui-border-light: #a18c7c;
+        --ui-border-dark: #3f2a1f; --text-light: #ffffff; --text-highlight: #ffc800;
+        --hp-color: #e53935; --mp-color: #1e88e5; --xp-color: #fdd835;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
-        font-family: 'IM Fell English', serif;
+        font-family: 'Press Start 2P', cursive;
         background: url("{{ asset('img/giphy.gif') }}") no-repeat center center fixed;
-        background-size: cover;
-        min-height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
+        background-size: cover; min-height: 100vh;
+        display: flex; justify-content: center; align-items: center;
+        padding: 10px; background-color: var(--bg-dark);
+        background-blend-mode: multiply; color: var(--text-light);
+        image-rendering: pixelated;
         overflow: hidden;
     }
-    
-    .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: -1; }
+
+    /* --- ESTILOS DA INTRODUÇÃO --- */
+    #story-intro {
+        position: fixed; inset: 0; background: #000; color: #fff;
+        display: flex; flex-direction: column; justify-content: center;
+        align-items: center; z-index: 200; padding: 20px;
+        opacity: 1; transition: opacity 1s ease-out;
+    }
+    #story-text { font-size: 1.5rem; line-height: 1.8; max-width: 800px; text-align: center; }
+    #stage-title {
+        font-size: 3rem; color: var(--text-highlight); margin-top: 40px;
+        opacity: 0; transform: scale(0.5); text-shadow: 3px 3px #000;
+    }
+    #stage-title.visible { animation: stage-intro 1.5s forwards; }
 
     .battle-screen {
-        width: 100%;
-        max-width: 1200px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 20px;
-        animation: fadeIn 1s forwards;
+        visibility: hidden; opacity: 0;
+        width: 100%; max-width: 1200px; display: flex; flex-direction: column;
+        align-items: center; gap: 15px; transition: opacity 1s; z-index: 2;
     }
-    
-    .combatants-area { display: flex; justify-content: center; align-items: flex-start; gap: 50px; width: 100%; }
-    .combatant-card { position: relative; width: 350px; background-color: var(--wood-color); border: 10px solid; border-image: linear-gradient(45deg, var(--metal-color), #8b8b8b) 1; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); color: var(--text-light); padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; transition: transform 0.3s ease; }
-    .combatant-card h2 { font-family: 'IM Fell English SC', serif; color: var(--gold-color); font-size: 1.8rem; margin-bottom: 10px; }
-    .combatant-avatar { width: 150px; height: 150px; border-radius: 50%; border: 4px solid var(--gold-color); margin-bottom: 15px; object-fit: cover; background-color: #222; }
-    .stat-bar { width: 100%; height: 22px; background-color: rgba(0, 0, 0, 0.4); border: 1px solid var(--metal-color); border-radius: 5px; margin-bottom: 8px; position: relative; overflow: hidden; }
-    .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease-out; }
-    .stat-bar-fill.hp { background: var(--hp-color); }
-    .stat-bar-fill.mp { background: var(--mp-color); }
-    .stat-bar-fill.xp { background: var(--xp-color); }
-    .stat-bar-text { position: absolute; inset: 0; font-family: 'Cinzel', serif; font-weight: 700; font-size: 0.8rem; color: white; text-shadow: 1px 1px 2px black; line-height: 22px; }
+    .battle-screen.visible { visibility: visible; opacity: 1; }
+    /* --- FIM DOS ESTILOS DA INTRODUÇÃO --- */
+
+    .combatants-area { display: flex; justify-content: center; align-items: flex-start; gap: 20px; width: 100%; }
+    .combatant-card {
+        width: 320px; background: var(--ui-main);
+        border: 4px solid var(--ui-border-dark);
+        box-shadow: inset 0 0 0 4px var(--ui-border-light);
+        padding: 15px; display: flex; flex-direction: column; align-items: center;
+    }
+    .combatant-card h2 { color: var(--text-highlight); font-size: 1.2rem; margin-bottom: 10px; text-shadow: 2px 2px #000; }
+    .combatant-avatar { width: 120px; height: 120px; border: 4px solid var(--ui-border-light); margin-bottom: 15px; object-fit: cover; background-color: var(--bg-dark); }
+    .stat-bar { width: 100%; height: 20px; background-color: var(--bg-dark); border: 2px solid var(--ui-border-light); margin-bottom: 8px; position: relative; }
+    .stat-bar-fill { height: 100%; transition: width 0.5s ease-out; }
+    .stat-bar-fill.hp { background: var(--hp-color); } .stat-bar-fill.mp { background: var(--mp-color); } .stat-bar-fill.xp { background: var(--xp-color); }
+    .stat-bar-text { position: absolute; inset: 0; font-size: 0.8rem; color: white; text-shadow: 1px 1px #000; line-height: 18px; text-align: center; }
+    .player-inventory { width: 100%; margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--ui-border-light); display: flex; justify-content: space-around; font-size: 0.9rem; }
+    .inventory-item { display: flex; align-items: center; gap: 8px; }
     .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; width: 100%; }
-    .action-btn { background: var(--metal-color); color: var(--wood-color); border: 3px outset var(--metal-color); padding: 12px 5px; text-decoration: none; font-weight: 700; font-size: 0.9rem; transition: all 0.2s ease-in-out; cursor: pointer; font-family: 'Cinzel', serif; }
-    .action-btn:hover:not(:disabled) { background: var(--gold-color); transform: translateY(-2px); }
-    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .battle-log { width: 100%; max-width: 800px; height: 180px; background: rgba(0,0,0,0.6); border: 2px solid var(--metal-color); padding: 15px; overflow-y: auto; color: var(--text-light); font-size: 1.1rem; line-height: 1.6; scroll-behavior: smooth; }
-    .battle-log p { margin-bottom: 5px; }
-    .log-player { color: #87ceeb; }
-    .log-enemy { color: #f08080; }
-    .log-system { color: #fafad2; font-style: italic; }
-    .log-heal { color: #90ee90; }
-    .log-crit { color: var(--gold-color); font-weight: bold; }
-    .log-lvlup { color: var(--gold-color); font-family: 'Cinzel', serif; font-size: 1.2rem; }
-    .damage-popup { position: absolute; top: 30%; left: 50%; transform: translateX(-50%); font-family: 'Cinzel', serif; font-size: 2.5rem; font-weight: bold; color: #ff4500; text-shadow: 2px 2px 2px black; animation: damagePopup 1s forwards; pointer-events: none; }
-    .crit { color: var(--gold-color); }
-    .heal { color: #90ee90; }
-    .shake { animation: shake 0.4s; }
-    .flash-red { animation: flashRed 0.4s; }
-    .endgame-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.5s; }
-    .endgame-modal.visible { opacity: 1; pointer-events: all; }
-    .modal-content { background-color: var(--wood-color); border: 10px solid var(--gold-color); padding: 40px; text-align: center; animation: fadeIn 0.5s; }
-    .modal-content h2 { font-family: 'IM Fell English SC', serif; font-size: 4rem; color: var(--gold-color); }
-    .modal-content p { color: var(--text-light); font-size: 1.5rem; margin: 20px 0; }
-    .modal-content a { display: inline-block; margin-top: 20px; background: var(--gold-color); color: var(--wood-color); padding: 15px 30px; font-family: 'Cinzel', serif; text-decoration: none; font-weight: bold; }
-    
-    @keyframes fadeIn { to { opacity: 1; } }
+    .action-btn { background: var(--ui-border-light); color: var(--ui-border-dark); border: 2px solid var(--ui-border-dark); padding: 10px 5px; font-weight: 700; font-size: 0.8rem; transition: all 0.1s; cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, auto; font-family: 'Press Start 2P', cursive; }
+    .action-btn:hover:not(:disabled) { background: var(--text-highlight); }
+    .action-btn:active:not(:disabled) { transform: translateY(2px); }
+    .action-btn:disabled { background: #555; color: #999; cursor: not-allowed; border-color: #333; }
+    .battle-log { width: 100%; max-width: 800px; height: 150px; background: var(--ui-main); border: 4px solid var(--ui-border-dark); box-shadow: inset 0 0 0 4px var(--ui-border-light); padding: 15px; overflow-y: auto; color: var(--text-light); font-size: 0.9rem; line-height: 1.6; text-align: left; }
+    .battle-log::-webkit-scrollbar { width: 12px; } .battle-log::-webkit-scrollbar-track { background: var(--ui-border-dark); } .battle-log::-webkit-scrollbar-thumb { background: var(--ui-border-light); border: 2px solid var(--ui-border-dark); }
+    .log-player { color: #87ceeb; } .log-enemy { color: #f08080; } .log-system { color: #fafad2; } .log-poison { color: #9c27b0; } .log-heal { color: #7cb342; } .log-crit, .log-lvlup { color: var(--text-highlight); }
+    .damage-popup { position: absolute; top: 30%; left: 50%; transform: translateX(-50%); font-size: 2rem; font-weight: bold; color: #ff4500; text-shadow: 2px 2px #000; animation: damagePopup 1s forwards; pointer-events: none; } .crit { color: var(--text-highlight); } .heal { color: #7cb342; } .shake { animation: shake 0.4s; } .flash-red { animation: flashRed 0.2s; }
+    .modal-overlay { position: fixed; inset: 0; z-index: 102; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+    .modal-overlay.is-visible { opacity: 1; visibility: visible; }
+    .modal-box { background: var(--ui-main); border: 4px solid var(--ui-border-dark); box-shadow: inset 0 0 0 4px var(--ui-border-light); padding: 30px; max-width: 600px; width: 90%; color: var(--text-light); transform: scale(0.9); transition: transform 0.3s ease; text-align: center;}
+    .modal-overlay.is-visible .modal-box { transform: scale(1); }
+    .modal-box h2 { font-size: 1.5rem; margin-bottom: 20px; color: var(--text-highlight); text-shadow: 2px 2px #000; }
+    .modal-box p { font-size: 1rem; line-height: 1.6; }
+    .modal-box a { margin-top: 30px; display: inline-block; padding: 15px 35px; }
     @keyframes damagePopup { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -80px); opacity: 0; } }
     @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } }
-    @keyframes flashRed { 0%, 100% { background-color: var(--wood-color); } 50% { background-color: #581111; } }
+    @keyframes flashRed { 50% { filter: brightness(3); } }
+    @keyframes stage-intro { 0% { opacity: 0; transform: scale(0.5); } 70% { opacity: 1; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+    @media (max-width: 768px) { .combatants-area { flex-direction: column; align-items: center; gap: 20px; } .combatant-card { width: 100%; max-width: 400px; } }
 </style>
 </head>
 <body>
 
-<div class="overlay"></div>
+<div id="story-intro">
+    <p id="story-text"></p>
+    <h1 id="stage-title">FASE 1</h1>
+</div>
 
 <div class="battle-screen">
     <div class="combatants-area">
         <div class="combatant-card" id="playerCard">
-            <h2 id="playerName">{{ $character->name }}</h2>
+            <h2 id="playerName"></h2>
             <img src="{{ asset($character->avatar) }}" class="combatant-avatar" alt="Avatar do Jogador">
-            
             <div class="stat-bar"><div class="stat-bar-fill hp" id="playerHpBar"></div><div class="stat-bar-text" id="playerHpText"></div></div>
             <div class="stat-bar"><div class="stat-bar-fill mp" id="playerMpBar"></div><div class="stat-bar-text" id="playerMpText"></div></div>
             <div class="stat-bar"><div class="stat-bar-fill xp" id="playerXpBar"></div><div class="stat-bar-text" id="playerXpText"></div></div>
-
-            <div class="actions-grid" id="actionsGrid">
+            <div class="player-inventory">
+                <div class="inventory-item">OURO: <span id="playerGold"></span></div>
+                <div class="inventory-item">POÇÕES: <span id="playerPotions"></span></div>
             </div>
+            <div class="actions-grid" id="actionsGrid"></div>
         </div>
-
         <div class="combatant-card" id="enemyCard">
-            <h2 id="enemyName">Goblin</h2>
-            <img src="{{ asset('img/goblin.png') }}" class="combatant-avatar" id="enemyAvatar" alt="Avatar do Inimigo">
+            <h2 id="enemyName"></h2>
+            <img src="" class="combatant-avatar" id="enemyAvatar" alt="Avatar do Inimigo">
             <div class="stat-bar"><div class="stat-bar-fill hp" id="enemyHpBar"></div><div class="stat-bar-text" id="enemyHpText"></div></div>
         </div>
     </div>
-
     <div class="battle-log" id="battleLog"></div>
 </div>
 
-<div class="endgame-modal" id="endgameModal">
-    <div class="modal-content">
+<div class="modal-overlay" id="endgameModal">
+    <div class="modal-box">
         <h2 id="modalTitle"></h2>
         <p id="modalText"></p>
-        <a href="{{ route('home') }}">Voltar para o Guild Hall</a>
+        <a href="{{ route('home') }}" class="btn">REINICIAR</a>
     </div>
 </div>
 
 <script>
+// --- LÓGICA DA INTRODUÇÃO ---
+const storyText = `A JORNADA DE {{ $character->name }} AVANÇA PARA O CORAÇÃO DA FLORESTA AMALDIÇOADA. SUSSURROS ANTIGOS ECOAM ENTRE AS ÁRVORES, FALANDO DE UM SEGREDO PODEROSO ESCONDIDO ALÉM DAS TREVAS... UM PODER QUE PODE MUDAR O DESTINO DO MUNDO.`;
+
+const Intro = {
+    storyContainer: document.getElementById('story-intro'),
+    storyTextEl: document.getElementById('story-text'),
+    stageTitleEl: document.getElementById('stage-title'),
+    battleScreenEl: document.querySelector('.battle-screen'),
+    typewriter(text, i = 0) {
+        if (i < text.length) {
+            this.storyTextEl.innerHTML += text.charAt(i);
+            setTimeout(() => this.typewriter(text, i + 1), 50);
+        } else {
+            setTimeout(() => this.showStageTitle(), 2000);
+        }
+    },
+    showStageTitle() {
+        this.stageTitleEl.classList.add('visible');
+        setTimeout(() => this.hideIntro(), 2500);
+    },
+    hideIntro() {
+        this.storyContainer.style.opacity = '0';
+        this.storyContainer.addEventListener('transitionend', () => {
+            this.storyContainer.remove();
+            this.showBattleScreen();
+        }, { once: true });
+    },
+    showBattleScreen() {
+        this.battleScreenEl.classList.add('visible');
+        Game.init();
+    },
+    start() {
+        this.typewriter(storyText);
+    }
+};
+
 const Game = {
     state: {
         player: {
             name: "{{ $character->name }}",
-            hp: {{ $character->hp }}, maxHp: {{ $character->hp }},
-            mp: {{ $character->mp }}, maxMp: {{ $character->mp }},
-            attack: {{ $character->attack }}, defense: {{ $character->defense }},
-            sp_attack: {{ $character->special_attack }}, sp_defense: {{ $character->special_defense }},
-            speed: {{ $character->speed }},
-            level: {{ $character->level }}, xp: {{ $character->exp }}, // Pega o XP inicial do banco
+            hp: "{{ $character->hp }}",
+            maxHp: "{{ $character->max_hp }}",
+            mp: "{{ $character->mp }}",
+            maxMp: "{{ $character->max_mp }}",
+            attack: "{{ $character->attack }}",
+            defense: "{{ $character->defense }}",
+            sp_attack: "{{ $character->special_attack }}",
+            sp_defense: "{{ $character->special_defense }}",
+            speed: "{{ $character->speed }}",
+            level: "{{ $character->level }}",
+            xp: "{{ $character->exp ?? 0 }}",
+            gold: "{{ $character->gold ?? 0 }}",
+            potions: "{{ $character->potions ?? 3 }}",
             xpToNextLevel: 50,
-            potions: 3
+            statusEffects: {}
         },
         enemy: {},
         enemies: [
-            { name:"Goblin", hp:30, attack:8, defense:3, speed: 10, img:"{{ asset('img/goblin.png') }}", xp: 25, specialChance: 0.1 },
-            { name:"Orc", hp:60, attack:12, defense:6, speed: 8, img:"{{ asset('img/orc.png') }}", xp: 50, specialChance: 0.25 },
-            { name:"Dragão", hp:100, attack:18, defense:10, speed: 12, img:"{{ asset('img/dragao.png') }}", xp: 100, specialChance: 0.4 }
+            { name: "Goblin Sorrateiro", hp: 60, attack: 25, defense: 8, xp: 30, gold: 15, specialChance: 0.3, specialMoves: [{ type: 'poison', damage: 5, turns: 3 }], img: "{{ asset('img/goblin.png') }}" },
+            { name: "Orc Berserker", hp: 120, attack: 32, defense: 12, xp: 60, gold: 40, specialChance: 0.2, enrageThreshold: 0.5, img: "{{ asset('img/orc.png') }}" },
+            { name: "Dragão Menor", hp: 200, attack: 40, defense: 18, xp: 120, gold: 100, specialChance: 0.4, specialMoves: [{ type: 'fireBreath', power: 1.8 }], img: "{{ asset('img/dragao.png') }}" }
         ],
         currentEnemyIndex: 0,
         gameState: 'PLAYER_TURN',
     },
+    
+    elements: {
+        player: { card: document.getElementById('playerCard'), name: document.getElementById('playerName'), hpBar: document.getElementById('playerHpBar'), hpText: document.getElementById('playerHpText'), mpBar: document.getElementById('playerMpBar'), mpText: document.getElementById('playerMpText'), xpBar: document.getElementById('playerXpBar'), xpText: document.getElementById('playerXpText'), actions: document.getElementById('actionsGrid'), goldDisplay: document.getElementById('playerGold'), potionsDisplay: document.getElementById('playerPotions') },
+        enemy: { card: document.getElementById('enemyCard'), name: document.getElementById('enemyName'), hpBar: document.getElementById('enemyHpBar'), hpText: document.getElementById('enemyHpText'), avatar: document.getElementById('enemyAvatar') },
+        log: document.getElementById('battleLog'),
+        modal: { container: document.getElementById('endgameModal'), title: document.getElementById('modalTitle'), text: document.getElementById('modalText') }
+    },
+    
+    actions: {
+        attack: { name: 'ATAQUE', cost: 0, type: 'mp', target: 'enemy', basePower: 1, stat: 'attack' },
+        skill: { name: 'MAGIA', cost: 10, type: 'mp', target: 'enemy', basePower: 1.5, stat: 'sp_attack' },
+        ultimate: { name: 'ESPECIAL', cost: 25, type: 'mp', target: 'enemy', basePower: 2.5, stat: 'sp_attack' },
+        potion: { name: 'POÇÃO', cost: 1, type: 'potion', target: 'player', basePower: 50, stat: 'heal' },
+    },
 
-    elements: { player: { card: document.getElementById('playerCard'), name: document.getElementById('playerName'), hpBar: document.getElementById('playerHpBar'), hpText: document.getElementById('playerHpText'), mpBar: document.getElementById('playerMpBar'), mpText: document.getElementById('playerMpText'), xpBar: document.getElementById('playerXpBar'), xpText: document.getElementById('playerXpText'), actions: document.getElementById('actionsGrid') }, enemy: { card: document.getElementById('enemyCard'), name: document.getElementById('enemyName'), hpBar: document.getElementById('enemyHpBar'), hpText: document.getElementById('enemyHpText'), avatar: document.getElementById('enemyAvatar') }, log: document.getElementById('battleLog'), modal: { container: document.getElementById('endgameModal'), title: document.getElementById('modalTitle'), text: document.getElementById('modalText') } },
-    actions: { attack: { name: 'Ataque Físico ⚔️', cost: 0, type: 'mp', target: 'enemy', basePower: 1, stat: 'attack' }, skill: { name: 'Feitiço Menor ✨ (10MP)', cost: 10, type: 'mp', target: 'enemy', basePower: 1.5, stat: 'sp_attack' }, ultimate: { name: 'Explosão Arcana 🔥 (25MP)', cost: 25, type: 'mp', target: 'enemy', basePower: 2.5, stat: 'sp_attack' }, potion: { name: 'Usar Poção ❤️', cost: 1, type: 'potion', target: 'player', basePower: 40, stat: 'heal' }, },
-    init() { this.loadEnemy(); this.renderActionButtons(); this.updateUI(); this.logMessage('Um ' + this.state.enemy.name + ' selvagem aparece!', 'log-system'); },
-    executeTurn(actionKey) { if (this.state.gameState !== 'PLAYER_TURN') return; this.setGameState('PROCESSING'); const action = this.actions[actionKey]; if (action.type === 'mp' && this.state.player.mp < action.cost) { this.logMessage('MP insuficiente!', 'log-system'); this.setGameState('PLAYER_TURN'); return; } if (action.type === 'potion' && this.state.player.potions < action.cost) { this.logMessage('Sem poções!', 'log-system'); this.setGameState('PLAYER_TURN'); return; } if (action.type === 'mp') this.state.player.mp -= action.cost; if (action.type === 'potion') this.state.player.potions--; this.logMessage(`${this.state.player.name} usou ${action.name}!`, 'log-player'); let value = 0; let isCrit = false; if (action.stat === 'heal') { value = action.basePower; this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + value); this.showPopup(value, this.elements.player.card, true); this.logMessage(`${this.state.player.name} recuperou ${value} de HP.`, 'log-heal'); } else { const power = this.state.player[action.stat] * action.basePower; const defense = (action.stat === 'attack') ? this.state.enemy.defense : 0; let damage = Math.floor(Math.max(1, (power - defense) * (Math.random() * 0.4 + 0.8))); if (Math.random() < 0.15) { damage = Math.floor(damage * 1.5); isCrit = true; this.logMessage('Acerto Crítico!', 'log-crit'); document.body.classList.add('shake'); setTimeout(() => document.body.classList.remove('shake'), 400); } this.state.enemy.hp -= damage; this.elements.enemy.card.classList.add('flash-red'); setTimeout(() => this.elements.enemy.card.classList.remove('flash-red'), 400); this.showPopup(damage, this.elements.enemy.card, false, isCrit); } this.updateUI(); if (this.state.enemy.hp <= 0) { this.logMessage(`${this.state.enemy.name} foi derrotado!`, 'log-system'); this.gainXP(this.state.enemy.xp); setTimeout(() => this.nextEnemy(), 1500); return; } setTimeout(() => this.enemyTurn(), 1500); },
-    enemyTurn() { this.setGameState('ENEMY_TURN'); this.logMessage(`Turno de ${this.state.enemy.name}.`, 'log-system'); let damage; if (Math.random() < this.state.enemy.specialChance) { damage = Math.floor(Math.max(1, (this.state.enemy.attack * 1.5 - this.state.player.defense) * (Math.random() * 0.4 + 0.8))); this.logMessage(`${this.state.enemy.name} usa um ATAQUE PODEROSO!`, 'log-enemy'); } else { damage = Math.floor(Math.max(1, (this.state.enemy.attack - this.state.player.defense) * (Math.random() * 0.4 + 0.8))); this.logMessage(`${this.state.enemy.name} ataca!`, 'log-enemy'); } this.state.player.hp -= damage; this.elements.player.card.classList.add('flash-red'); setTimeout(() => this.elements.player.card.classList.remove('flash-red'), 400); this.showPopup(damage, this.elements.player.card, false); this.state.player.mp = Math.min(this.state.player.maxMp, this.state.player.mp + 5); this.updateUI(); if (this.state.player.hp <= 0) { this.logMessage('Você foi derrotado...', 'log-system'); this.gameOver(false); return; } setTimeout(() => this.setGameState('PLAYER_TURN'), 1000); },
-    gainXP(amount) { this.logMessage(`${this.state.player.name} ganhou ${amount} XP!`, 'log-system'); this.state.player.xp += amount; while (this.state.player.xp >= this.state.player.xpToNextLevel) { this.state.player.xp -= this.state.player.xpToNextLevel; this.state.player.level++; this.state.player.xpToNextLevel = Math.floor(this.state.player.xpToNextLevel * 1.5); this.state.player.maxHp += 15; this.state.player.maxMp += 10; this.state.player.attack += 3; this.state.player.defense += 2; this.state.player.sp_attack += 3; this.state.player.hp = this.state.player.maxHp; this.state.player.mp = this.state.player.maxMp; this.logMessage(`LEVEL UP! Você alcançou o Nível ${this.state.player.level}!`, 'log-lvlup'); } this.updateUI(); },
-    nextEnemy() { this.state.currentEnemyIndex++; if (this.state.currentEnemyIndex >= this.state.enemies.length) { this.gameOver(true); return; } this.loadEnemy(); this.updateUI(); this.logMessage(`Um novo oponente surge: ${this.state.enemy.name}!`, 'log-system'); this.setGameState('PLAYER_TURN'); },
+    // ===== FUNÇÃO DE INICIALIZAÇÃO =====
+    init() { 
+        this.sanitizeStats(); // Garante que todos os status são números
+        this.loadEnemy(); 
+        this.renderActionButtons(); 
+        this.updateUI(); 
+        this.logMessage(`UM ${this.state.enemy.name.toUpperCase()} APARECE!`, 'log-system'); 
+    },
+    
+    // ===== CORREÇÃO DEFINITIVA PARA O NaN =====
+    sanitizeStats() {
+        const p = this.state.player;
+        const statsToSanitize = ['hp', 'maxHp', 'mp', 'maxMp', 'attack', 'defense', 'sp_attack', 'sp_defense', 'speed', 'level', 'xp', 'gold', 'potions'];
+        const defaultValues = { hp: 100, maxHp: 100, mp: 50, maxMp: 50, attack: 10, defense: 5, sp_attack: 10, sp_defense: 5, speed: 10, level: 1, xp: 0, gold: 0, potions: 3 };
+
+        statsToSanitize.forEach(stat => {
+            p[stat] = parseInt(p[stat], 10) || defaultValues[stat];
+        });
+        
+        // Garante que a vida atual não ultrapasse a máxima ao carregar
+        p.hp = Math.min(p.hp, p.maxHp);
+    },
+
+    calculateDamage(power, defense) {
+        const effectiveDefense = defense * 0.5;
+        const baseDamage = Math.max(1, power - effectiveDefense);
+        return Math.floor(baseDamage * (Math.random() * 0.4 + 0.8));
+    },
+
+    executeTurn(actionKey) {
+        if (this.state.gameState !== 'PLAYER_TURN') return;
+        const action = this.actions[actionKey];
+        if (action.type === 'mp' && this.state.player.mp < action.cost) { this.logMessage('MP INSUFICIENTE!', 'log-system'); return; }
+        if (action.type === 'potion' && this.state.player.potions <= 0) { this.logMessage('SEM POÇÕES!', 'log-system'); return; }
+        this.setGameState('PROCESSING');
+        if (action.type === 'mp') this.state.player.mp -= action.cost; 
+        if (action.type === 'potion') this.state.player.potions--;
+        this.logMessage(`${this.state.player.name} USA ${action.name.split('(')[0].trim()}!`, 'log-player');
+        if (action.stat === 'heal') {
+            const healAmount = action.basePower;
+            this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + healAmount);
+            this.showPopup(healAmount, this.elements.player.card, true);
+            this.logMessage(`${this.state.player.name} RECUPEROU ${healAmount} HP.`, 'log-heal');
+        } else {
+            const power = this.state.player[action.stat] * action.basePower;
+            let damage = (action.stat === 'attack') ? this.calculateDamage(power, this.state.enemy.defense) : this.calculateDamage(power, 0);
+            if (Math.random() < 0.15) {
+                damage = Math.floor(damage * 1.5);
+                this.logMessage('ACERTO CRÍTICO!', 'log-crit');
+                this.elements.enemy.card.classList.add('shake');
+                setTimeout(() => this.elements.enemy.card.classList.remove('shake'), 400);
+            }
+            this.state.enemy.hp -= damage;
+            this.elements.enemy.card.classList.add('flash-red');
+            setTimeout(() => this.elements.enemy.card.classList.remove('flash-red'), 200);
+            this.showPopup(damage, this.elements.enemy.card, false, damage > power);
+        }
+        this.updateUI();
+        if (this.state.enemy.hp <= 0) {
+            const defeatedEnemy = this.state.enemies[this.state.currentEnemyIndex];
+            this.logMessage(`${defeatedEnemy.name.toUpperCase()} DERROTADO!`, 'log-system');
+            this.state.player.gold += defeatedEnemy.gold;
+            this.logMessage(`+${defeatedEnemy.gold} OURO!`, 'log-crit');
+            this.gainXP(defeatedEnemy.xp);
+            setTimeout(() => this.nextEnemy(), 2000);
+            return;
+        }
+        setTimeout(() => this.enemyTurn(), 1500);
+    },
+
+    enemyTurn() {
+        this.setGameState('ENEMY_TURN');
+        const enemy = this.state.enemy;
+        let damage;
+        if (enemy.enrageThreshold && enemy.hp / enemy.maxHp < enemy.enrageThreshold && !enemy.isEnraged) {
+            enemy.isEnraged = true;
+            enemy.attack = Math.floor(enemy.attack * 1.5);
+            this.logMessage(`${enemy.name.toUpperCase()} ENTRA EM FÚRIA!`, 'log-enemy');
+        } else if (enemy.specialMoves && Math.random() < enemy.specialChance) {
+            const move = enemy.specialMoves[0];
+            switch (move.type) {
+                case 'poison':
+                    this.state.player.statusEffects.poison = { turns: move.turns, damage: move.damage };
+                    this.logMessage(`${enemy.name.toUpperCase()} USA ATAQUE VENENOSO!`, 'log-enemy');
+                    damage = this.calculateDamage(enemy.attack * 0.8, this.state.player.defense);
+                    break;
+                case 'fireBreath':
+                    this.logMessage(`${enemy.name.toUpperCase()} USA BAFORADA DE FOGO!`, 'log-enemy');
+                    damage = this.calculateDamage(enemy.attack * move.power, this.state.player.defense * 0.7);
+                    break;
+                default: damage = this.calculateDamage(enemy.attack, this.state.player.defense);
+            }
+        } else {
+            damage = this.calculateDamage(enemy.attack, this.state.player.defense);
+            this.logMessage(`${enemy.name.toUpperCase()} ATACA!`, 'log-enemy');
+        }
+        this.state.player.hp -= damage;
+        this.elements.player.card.classList.add('flash-red');
+        setTimeout(() => this.elements.player.card.classList.remove('flash-red'), 200);
+        this.showPopup(damage, this.elements.player.card, false);
+        this.processStatusEffects();
+        this.state.player.mp = Math.min(this.state.player.maxMp, this.state.player.mp + 5);
+        this.updateUI();
+        if (this.state.player.hp <= 0) { this.logMessage('VOCÊ FOI DERROTADO...', 'log-system'); this.gameOver(false); return; }
+        setTimeout(() => this.setGameState('PLAYER_TURN'), 1000);
+    },
+
+    processStatusEffects() {
+        const player = this.state.player;
+        if (player.statusEffects.poison) {
+            const poison = player.statusEffects.poison;
+            player.hp -= poison.damage;
+            this.logMessage(`VOCÊ SOFRE ${poison.damage} DE DANO DE VENENO!`, 'log-poison');
+            this.showPopup(poison.damage, this.elements.player.card, false);
+            poison.turns--;
+            if (poison.turns <= 0) {
+                this.logMessage('O VENENO SE DISSIPOU.', 'log-system');
+                delete player.statusEffects.poison;
+            }
+        }
+    },
+    
+    gainXP(amount) { 
+        this.logMessage(`+${amount} XP!`, 'log-crit'); 
+        this.state.player.xp += amount; 
+        while (this.state.player.xp >= this.state.player.xpToNextLevel) { 
+            this.state.player.xp -= this.state.player.xpToNextLevel; 
+            this.state.player.level++; 
+            this.state.player.xpToNextLevel = Math.floor(this.state.player.xpToNextLevel * 1.5); 
+            this.state.player.maxHp += 15; this.state.player.maxMp += 10;
+            this.state.player.attack += 3; this.state.player.defense += 2; this.state.player.sp_attack += 3; 
+            const healAmount = Math.floor(this.state.player.maxHp * 0.5);
+            this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + healAmount);
+            this.state.player.mp = this.state.player.maxMp;
+            this.logMessage(`LEVEL UP! NÍVEL ${this.state.player.level}!`, 'log-lvlup'); 
+        } 
+        this.updateUI(); 
+    },
+
+    nextEnemy() { this.state.currentEnemyIndex++; if (this.state.currentEnemyIndex >= this.state.enemies.length) { this.gameOver(true); return; } this.loadEnemy(); this.updateUI(); this.logMessage(`UM ${this.state.enemy.name.toUpperCase()} APARECE!`, 'log-system'); this.setGameState('PLAYER_TURN'); },
     loadEnemy() { this.state.enemy = { ...this.state.enemies[this.state.currentEnemyIndex] }; this.state.enemy.maxHp = this.state.enemy.hp; },
     
     async gameOver(isVictory) {
         this.setGameState('GAME_OVER');
         if (isVictory) {
-            this.logMessage('Todos os inimigos foram derrotados! Salvando progresso...', 'log-lvlup');
-            
+            this.logMessage('FASE CONCLUÍDA!', 'log-lvlup');
             await this.saveProgress();
-            
-            this.logMessage('Redirecionando...', 'log-system');
-            setTimeout(() => { 
-                window.location.href = "{{ route('character.play2', $character->id) }}"; 
-            }, 1000);
-
+            this.logMessage('VENDEDOR MÁGICO ENCONTRADO...', 'log-system');
+            setTimeout(() => { window.location.href = "{{ route('character.shop', ['id' => $character->id, 'next_stage' => 'play2']) }}"; }, 1500);
         } else {
-            this.elements.modal.title.textContent = "Fim de Jogo";
-            this.elements.modal.text.textContent = "Sua jornada termina aqui...";
-            this.elements.modal.container.classList.add('visible');
+            const modal = this.elements.modal.container;
+            modal.innerHTML = `<div class="modal-box"><h2 id="modalTitle">FIM DE JOGO</h2><p id="modalText">SUA JORNADA TERMINA AQUI...</p><a href="{{ route('home') }}" class="btn">REINICIAR</a></div>`;
+            modal.classList.add('is-visible');
         }
     },
-
+    
     async saveProgress() {
         const playerData = this.state.player;
-        
-        try {
-            await fetch("{{ route('character.saveProgress', $character->id) }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify(playerData)
-            });
-        } catch (error) {
-            console.error('Erro ao salvar o progresso:', error);
-            this.logMessage('Falha ao salvar o progresso. Tente novamente.', 'log-enemy');
-        }
+        try { await fetch("{{ route('character.saveProgress', $character->id) }}", { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }, body: JSON.stringify(playerData) }); } catch (error) { console.error('Erro ao salvar o progresso:', error); }
     },
 
-    updateUI() { const { player, enemy } = this.state; const { player: playerEl, enemy: enemyEl } = this.elements; playerEl.name.textContent = `${player.name} (Lvl ${player.level})`; playerEl.hpBar.style.width = `${Math.max(0, player.hp / player.maxHp * 100)}%`; playerEl.hpText.textContent = `HP: ${Math.max(0, player.hp)} / ${player.maxHp}`; playerEl.mpBar.style.width = `${Math.max(0, player.mp / player.maxMp * 100)}%`; playerEl.mpText.textContent = `MP: ${Math.max(0, player.mp)} / ${player.maxMp}`; playerEl.xpBar.style.width = `${Math.max(0, player.xp / player.xpToNextLevel * 100)}%`; playerEl.xpText.textContent = `XP: ${player.xp} / ${player.xpToNextLevel}`; enemyEl.name.textContent = enemy.name; enemyEl.avatar.src = enemy.img; enemyEl.hpBar.style.width = `${Math.max(0, enemy.hp / enemy.maxHp * 100)}%`; enemyEl.hpText.textContent = `HP: ${Math.max(0, enemy.hp)} / ${enemy.maxHp}`; },
-    renderActionButtons() { this.elements.player.actions.innerHTML = ''; for (const key in this.actions) { const action = this.actions[key]; const btn = document.createElement('button'); btn.className = 'action-btn'; btn.textContent = action.name; btn.onclick = () => this.executeTurn(key); this.elements.player.actions.appendChild(btn); } },
+    updateUI() {
+        const { player, enemy } = this.state;
+        const { player: playerEl, enemy: enemyEl } = this.elements;
+        playerEl.name.textContent = `${player.name} LV ${player.level}`;
+        playerEl.hpBar.style.width = `${Math.max(0, player.hp / player.maxHp * 100)}%`; playerEl.hpText.textContent = `HP: ${Math.max(0, Math.ceil(player.hp))}/${player.maxHp}`;
+        playerEl.mpBar.style.width = `${Math.max(0, player.mp / player.maxMp * 100)}%`; playerEl.mpText.textContent = `MP: ${Math.max(0, Math.ceil(player.mp))}/${player.maxMp}`;
+        playerEl.xpBar.style.width = `${Math.max(0, player.xp / player.xpToNextLevel * 100)}%`; playerEl.xpText.textContent = `XP: ${player.xp}/${player.xpToNextLevel}`;
+        playerEl.goldDisplay.textContent = player.gold;
+        playerEl.potionsDisplay.textContent = player.potions;
+        enemyEl.name.textContent = enemy.name.toUpperCase(); enemyEl.avatar.src = enemy.img; enemyEl.hpBar.style.width = `${Math.max(0, enemy.hp / enemy.maxHp * 100)}%`; enemyEl.hpText.textContent = `HP: ${Math.max(0, Math.ceil(enemy.hp))}/${enemy.maxHp}`;
+        const potionBtn = this.elements.player.actions.querySelector('[data-action-key="potion"]');
+        if (potionBtn) { potionBtn.innerHTML = `POÇÃO (${player.potions})`; potionBtn.disabled = player.potions <= 0 || this.state.gameState !== 'PLAYER_TURN'; }
+    },
+    
+    renderActionButtons() {
+        this.elements.player.actions.innerHTML = '';
+        for (const key in this.actions) { const action = this.actions[key]; const btn = document.createElement('button'); btn.className = 'action-btn'; btn.dataset.actionKey = key; btn.innerHTML = action.name; btn.onclick = () => this.executeTurn(key); this.elements.player.actions.appendChild(btn); }
+    },
+    
     logMessage(message, className = '') { const p = document.createElement('p'); p.innerHTML = message; if (className) p.className = className; this.elements.log.appendChild(p); this.elements.log.scrollTop = this.elements.log.scrollHeight; },
     showPopup(text, targetCard, isHeal = false, isCrit = false) { const popup = document.createElement('div'); popup.className = 'damage-popup'; popup.textContent = text; if (isHeal) popup.classList.add('heal'); if (isCrit) popup.classList.add('crit'); targetCard.appendChild(popup); setTimeout(() => popup.remove(), 1000); },
-    setGameState(newState) { this.state.gameState = newState; const buttons = this.elements.player.actions.querySelectorAll('button'); buttons.forEach(btn => btn.disabled = (newState !== 'PLAYER_TURN')); }
+    setGameState(newState) { this.state.gameState = newState; const buttons = this.elements.player.actions.querySelectorAll('button'); buttons.forEach(btn => { if(btn.dataset.actionKey !== 'potion') { btn.disabled = (newState !== 'PLAYER_TURN'); } else { btn.disabled = (this.state.player.potions <= 0 || newState !== 'PLAYER_TURN'); } }); }
 };
 
-document.addEventListener('DOMContentLoaded', () => Game.init());
+document.addEventListener('DOMContentLoaded', () => Intro.start());
 </script>
 </body>
 </html>

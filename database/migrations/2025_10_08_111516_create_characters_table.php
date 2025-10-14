@@ -6,6 +6,11 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
     public function up(): void
     {
         Schema::create('characters', function (Blueprint $table) {
@@ -21,10 +26,21 @@ return new class extends Migration
             $table->integer('special_defense')->default(10);
             $table->integer('level')->default(1);
             $table->integer('exp')->default(0);
+
+            // ===== LINHAS ADICIONADAS =====
+            $table->integer('gold')->default(50);
+            $table->integer('potions')->default(3);
+            // ============================
+
             $table->timestamps();
         });
     }
 
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
     public function down(): void
     {
         Schema::dropIfExists('characters');

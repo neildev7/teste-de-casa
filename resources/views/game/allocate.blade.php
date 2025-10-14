@@ -8,22 +8,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="icon" href="{{ asset('img/logo.png') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;800&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --wood-color: #5d4037;
-            --wood-darker: #4e342e;
-            --metal-color: #a9a9aa;
-            --gold-color: #ffd700;
-            --text-light: #f0e9d9; 
-            --success-color: #4caf50;
+            --bg-dark: #1a1c2c;
+            --ui-main: #5a3a2b;
+            --ui-border-light: #a18c7c;
+            --ui-border-dark: #3f2a1f;
+            --text-light: #ffffff;
+            --text-highlight: #ffc800;
+            --success-color: #7cb342;
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'IM Fell English', serif;
+            font-family: 'Press Start 2P', cursive;
             background: url("{{ asset('img/giphy.gif') }}") no-repeat center center fixed;
             background-size: cover;
             min-height: 100vh;
@@ -31,213 +32,142 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            background-color: var(--bg-dark);
             background-blend-mode: multiply;
+            color: var(--text-light);
+            image-rendering: pixelated;
         }
 
-        .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: 0; }
+        .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: -1; }
         
         .main-container {
             position: relative; z-index: 1;
-            padding: clamp(25px, 4vw, 40px);
-            max-width: 1100px; 
+            padding: clamp(20px, 4vw, 30px);
+            max-width: 800px;
             width: 100%;
-            background-color: var(--wood-color);
-            border: 15px solid;
-            border-image: linear-gradient(45deg, var(--metal-color), #8b8b8b) 1;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
-            color: var(--text-light);
+            background: var(--ui-main);
+            border: 4px solid var(--ui-border-dark);
+            box-shadow: inset 0 0 0 4px var(--ui-border-light), 0 10px 30px rgba(0,0,0,0.5);
             opacity: 0;
-            transform: translateY(20px);
-            animation: fadeInUp 0.8s 0.2s forwards ease-out;
-        }
-
-        /* --- LAYOUT RESPONSIVO --- */
-        .grid-layout {
-            display: grid;
-            grid-template-columns: 1fr; /* Padrão: 1 coluna para mobile */
-            gap: 30px 40px;
-        }
-
-        /* Em telas maiores (desktops), muda para 2 colunas */
-        @media (min-width: 992px) {
-            .grid-layout {
-                grid-template-columns: 1fr 1fr;
-            }
-            .grid-span-2 {
-                grid-column: 1 / -1; /* Ocupa as duas colunas */
-            }
-            .column-left {
-                border-right: 1px solid rgba(255, 215, 0, 0.2);
-                padding-right: 40px;
-            }
-        }
-
-        .column { display: flex; flex-direction: column; }
-        .text-center { text-align: center; }
-
-        h1 {
-            font-family: 'IM Fell English SC', serif;
-            font-size: clamp(2rem, 4vw, 2.8rem);
-            color: var(--gold-color);
-            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.8);
-            margin-bottom: 20px;
+            animation: fadeIn 0.5s 0.2s forwards;
             text-align: center;
         }
-
-        h3 {
-            font-family: 'Cinzel', serif;
-            font-weight: 800;
-            color: var(--gold-color);
-            font-size: 1.6rem;
-            margin-top: 25px;
-            margin-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
-            padding-bottom: 10px;
-            letter-spacing: 1px;
-        }
         
-        .tutorial-avatar {
-            width: 120px; height: 120px;
-            border-radius: 50%; border: 4px solid var(--gold-color);
-            margin: 0 auto 20px auto;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-        }
-
-        p {
-            font-size: 1.1rem; line-height: 1.7;
-            margin-bottom: 15px; text-align: justify;
-        }
-        p strong, .highlight { color: var(--gold-color); font-weight: normal; }
-
-        .tutorial-list { text-align: left; list-style: none; padding-left: 15px; }
-        .tutorial-list li {
-            font-size: 1.1rem; margin-bottom: 12px;
-            line-height: 1.6; padding-left: 10px;
-            position: relative;
-        }
-        .tutorial-list li::before {
-            content: '•'; color: var(--gold-color);
-            font-size: 1.5rem; position: absolute; left: -15px; top: -3px;
+        h1 {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            color: var(--text-highlight);
+            text-shadow: 3px 3px #000;
+            margin: 0 0 30px;
         }
 
         .points-display {
-            font-family: 'Cinzel', serif; font-size: 1.5rem; text-align: center;
-            margin-bottom: 20px; background: var(--wood-darker);
-            padding: 10px; border-radius: 5px;
-            border: 2px solid var(--metal-color);
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            background: var(--bg-dark);
+            padding: 15px;
+            border: 2px solid var(--ui-border-light);
             transition: all 0.3s;
         }
-        .points-display.complete { border-color: var(--success-color); animation: pulse 1.5s infinite ease-in-out; }
-        .points-display span { font-size: 2rem; font-weight: 700; color: var(--gold-color); }
-        .points-display.complete span { color: var(--success-color); }
+        .points-display.complete { border-color: var(--success-color); animation: pulse 1.5s infinite; }
+        .points-display span { font-size: 1.8rem; color: var(--text-highlight); animation: blink-text 2s infinite; }
+        .points-display.complete span { color: var(--success-color); animation: none; }
 
         .attribute-row {
-            display: grid; grid-template-columns: 1fr;
-            gap: 10px; margin-bottom: 12px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .attribute-row label {
+            font-size: 1rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .attr-bar-wrapper {
+            width: 100%;
+            height: 28px;
+            background: var(--ui-border-dark);
+            border: 2px solid var(--ui-border-light);
+            padding: 2px;
+        }
+        .attr-bar-fill {
+            width: 0;
+            height: 100%;
+            background-color: var(--text-highlight);
+            transition: width 0.2s linear;
+        }
+        .attribute-controls {
+            display: flex;
             align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
         }
-         @media (min-width: 480px) { /* Em telas um pouco maiores, o label fica ao lado */
-            .attribute-row { grid-template-columns: 130px 1fr; }
-        }
-
-        .attribute-row label { font-size: 1.2rem; font-family: 'Cinzel', serif; text-align: left; }
-        .attribute-controls { display: flex; align-items: center; justify-content: space-between; }
-        .attr-value { font-family: 'Cinzel', serif; font-weight: 700; font-size: 1.5rem; text-align: center; color: var(--gold-color);}
-        
+        .attr-value { font-size: 1.2rem; color: var(--text-light); }
         .attr-btn {
-            font-family: 'Cinzel', serif; width: 35px; height: 35px;
-            border-radius: 8px; border: 2px outset var(--metal-color);
-            background: #c0c0c0; color: var(--wood-color);
-            font-size: 1.2rem; font-weight: 700; cursor: pointer;
-            transition: all 0.2s;
+            background: var(--ui-border-light);
+            color: var(--ui-border-dark);
+            border: 2px solid var(--ui-border-dark);
+            width: 45px; height: 35px;
+            font-family: inherit; font-size: 1rem;
+            cursor: pointer;
         }
-        .attr-btn:hover:not(:disabled) { background: var(--gold-color); border-color: var(--gold-color); }
-        .attr-btn:disabled { opacity: 0.4; cursor: not-allowed; border-style: solid; }
+        .attr-btn:active { transform: translateY(2px); }
+        .attr-btn:disabled { background: #555; color: #999; cursor: not-allowed; }
 
         .btn {
-            display: inline-block; background: var(--gold-color);
-            color: var(--wood-color); border: 3px outset var(--gold-color);
+            background: var(--ui-main); color: var(--text-light);
+            border: 4px solid var(--ui-border-dark);
+            box-shadow: inset 0 0 0 4px var(--ui-border-light);
             padding: 15px 35px; text-decoration: none;
-            font-weight: 700; font-size: 1.1rem;
-            transition: all 0.3s ease-in-out; cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            letter-spacing: 1px; text-transform: uppercase;
-            font-family: 'Cinzel', serif; margin-top: 20px;
-            width: 100%;
+            font-size: 1.2rem; transition: all 0.1s;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, auto;
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            margin-top: 20px;
         }
-        .btn:hover:not(:disabled) {
-            background-color: #ffed4a;
-            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
-            transform: translateY(-3px);
-        }
-        .btn:disabled {
-            background: var(--metal-color); border-color: var(--metal-color);
-            color: #777; opacity: 0.6; cursor: not-allowed;
-            transform: none; box-shadow: none;
-        }
-
-        @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0%, 100% { box-shadow: 0 0 15px rgba(76, 175, 80, 0.4); } 50% { box-shadow: 0 0 25px rgba(76, 175, 80, 0.9); } }
+        .btn:hover:not(:disabled) { background: var(--ui-border-light); color: var(--bg-dark); }
+        .btn:disabled { background: #555; color: #999; cursor: not-allowed; border-color: #333; box-shadow: inset 0 0 0 4px #777; animation: none; }
+        .btn:not(:disabled) { animation: shine 2s infinite; }
+        
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 0 10px var(--success-color); } 50% { box-shadow: 0 0 20px var(--success-color); } }
+        @keyframes blink-text { 50% { opacity: 0.7; } }
+        @keyframes shine { 0%, 100% { box-shadow: inset 0 0 0 4px var(--ui-border-light); } 50% { box-shadow: inset 0 0 0 4px var(--text-highlight); } }
     </style>
 </head>
 <body>
 
 <div class="overlay"></div>
 
-<form class="main-container" method="POST" action="{{ route('character.allocate.store', $character->id) }}">
-    @csrf
-    <div class="grid-layout">
-        <h1 class="grid-span-2">A Forja do Herói</h1>
+<main class="main-container">
+    <form method="POST" action="{{ route('character.allocate.store', $character->id) }}">
+        @csrf
+        <h1>FORJA DO HERÓI</h1>
+        <p class="points-display">PONTOS: <span id="pointsLeft">75</span></p>
 
-        <div class="column column-left">
-            <div class="text-center">
-                <img src="{{ asset($character->avatar) }}" class="tutorial-avatar" alt="Avatar de {{ $character->name }}">
-                <p>Saudações, <strong class="highlight">{{ $character->name }}</strong>! O destino de <strong>Pixelândia</strong> repousa sobre seus ombros.</p>
-            </div>
+        <div id="attributesContainer">
+            @php
+                $attributes = ['hp' => 'HP', 'mp' => 'MP', 'attack' => 'ATAQUE', 'defense' => 'DEFESA', 'speed' => 'VELOCIDADE', 'special_attack' => 'AT. ESPECIAL', 'special_defense' => 'DEF. ESPECIAL'];
+            @endphp
 
-            <h3>📜 A Lenda</h3>
-            <p>O "Grande Reset" falhou, deixando para trás um <strong class="highlight">Eco Sombrio</strong> que corrompe a terra e manifesta criaturas de pesadelo. Sua missão é purificar o reino e descobrir o segredo por trás desta falha.</p>
-
-            <h3>📜 Comandos de Batalha</h3>
-            <ul class="tutorial-list">
-                <li><strong>Ataque Físico:</strong> Um golpe básico que não custa MP.</li>
-                <li><strong>Habilidades:</strong> Ataques poderosos que consomem MP.</li>
-                <li><strong>Poção:</strong> Use para restaurar HP em um momento de aperto.</li>
-            </ul>
-        </div>
-
-        <div class="column">
-            <h3>⚔️ Molde seu Destino</h3>
-            <p style="text-align: center;">Você tem pontos para distribuir e forjar suas habilidades. Gaste-os com sabedoria.</p>
-            
-            <p class="points-display">Pontos restantes: <span id="pointsLeft">75</span></p>
-
-            <div id="attributesContainer">
-                @php
-                    $attributes = ['hp' => '❤️ HP', 'mp' => '✨ MP', 'attack' => '⚔️ Ataque', 'defense' => '🛡️ Defesa', 'speed' => '⚡ Velocidade', 'special_attack' => '🔥 At. Especial', 'special_defense' => '🔮 Def. Especial'];
-                @endphp
-
-                @foreach($attributes as $attr => $label)
-                <div class="attribute-row" data-attr="{{ $attr }}">
-                    <label for="{{ $attr }}">{{ $label }}:</label>
-                    <div class="attribute-controls">
-                        <button type="button" class="attr-btn minus-btn" data-amount="5">-5</button>
-                        <button type="button" class="attr-btn minus-btn">-1</button>
-                        <span class="attr-value" id="{{ $attr }}Value">0</span>
-                        <button type="button" class="attr-btn plus-btn">+1</button>
-                        <button type="button" class="attr-btn plus-btn" data-amount="5">+5</button>
-                        <input type="hidden" id="{{ $attr }}" name="{{ $attr }}" value="0">
-                    </div>
+            @foreach($attributes as $attr => $label)
+            <div class="attribute-row" data-attr="{{ $attr }}">
+                <label for="{{ $attr }}">{{ $label }}</label>
+                <div class="attr-bar-wrapper">
+                    <div class="attr-bar-fill" id="{{ $attr }}Bar"></div>
                 </div>
-                @endforeach
+                <div class="attribute-controls">
+                    <button type="button" class="attr-btn minus-btn" data-amount="5">-5</button>
+                    <button type="button" class="attr-btn minus-btn" data-amount="1">-1</button>
+                    <span class="attr-value" id="{{ $attr }}Value">0</span>
+                    <button type="button" class="attr-btn plus-btn" data-amount="1">+1</button>
+                    <button type="button" class="attr-btn plus-btn" data-amount="5">+5</button>
+                    <input type="hidden" id="{{ $attr }}" name="{{ $attr }}" value="0">
+                </div>
             </div>
+            @endforeach
         </div>
-        
-        <div class="grid-span-2 text-center">
-             <button type="submit" id="submitBtn" class="btn">Iniciar Jornada</button>
-        </div>
-    </div>
-</form>
+        <button type="submit" id="submitBtn" class="btn" disabled>INICIAR JORNADA</button>
+    </form>
+</main>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -254,6 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateUI = () => {
         pointsLeftEl.textContent = pointsLeft;
         submitBtn.disabled = (pointsLeft !== 0);
+        submitBtn.classList.toggle('no-shine', pointsLeft !== 0);
 
         if (pointsLeft === 0) {
             pointsDisplayEl.classList.add('complete');
@@ -264,6 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.attribute-row').forEach(row => {
             const input = row.querySelector('input[type="hidden"]');
             const currentValue = parseInt(input.value);
+            const bar = row.querySelector('.attr-bar-fill');
+            bar.style.width = `${(currentValue / maxPerAttr) * 100}%`;
             
             const plusBtns = row.querySelectorAll('.plus-btn');
             const minusBtns = row.querySelectorAll('.minus-btn');
@@ -281,7 +214,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     attributesContainer.addEventListener('click', (event) => {
         const target = event.target;
-        // Sai se o alvo não for um botão ou se estiver desabilitado
         if (!target.classList.contains('attr-btn') || target.disabled) return;
 
         const row = target.closest('.attribute-row');
@@ -307,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateUI();
     });
 
-    updateUI(); // Inicia a interface com os valores e estados corretos
+    updateUI();
 });
 </script>
 

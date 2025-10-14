@@ -3,209 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Last SENAI | Guild Hall</title>
+    <title>The Last SENAI | Selecione seu Herói</title>
 
     <link rel="icon" href="{{ asset('img/logo.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --paper-color: #f7f3e8; --wood-color: #5d4037; --metal-color: #a9a9a9;
-            --gold-color: #ffd700; --gold-dark-color: #eab308; --danger-color: #a02c2c;
-            --success-color: #2e7d32; --text-dark: #333333;
-            --transition-speed-fast: 0.3s; --transition-speed-slow: 0.6s;
+            --bg-dark: #1a1c2c; /* Fundo principal escuro, pode ser um azul/cinza quase preto */
+            --ui-main: #5a3a2b; /* Marrom principal da UI */
+            --ui-border-light: #a18c7c; /* Marrom mais claro para bordas e destaques */
+            --ui-border-dark: #3f2a1f; /* Marrom mais escuro para bordas */
+            --text-light: #ffffff; /* Branco para o texto */
+            --text-highlight: #ffc800; /* Amarelo para destaques (ouro) */
+            --danger-color: #e53935; /* Vermelho para ações de perigo */
+            --success-color: #7cb342; /* Verde para ações de sucesso */
         }
 
         *, *::before, *::after { box-sizing: border-box; }
         .no-js body { visibility: hidden; }
 
         body {
-            margin: 0; padding: 20px; font-family: 'Cinzel', serif;
-            background: var(--paper-color) url("{{ asset('img/giphy.gif') }}") no-repeat center center fixed;
-            background-size: cover; color: var(--text-dark); text-align: center;
+            margin: 0; padding: 20px; font-family: 'Press Start 2P', cursive;
+            background-color: var(--bg-dark);
+            background-image: url("{{ asset('img/giphy.gif') }}"); /* Mantenha seu GIF de fundo */
+            background-size: cover; background-blend-mode: multiply; /* Para escurecer o GIF */
+            color: var(--text-light); text-align: center;
             min-height: 100vh; display: flex; justify-content: center; align-items: center;
-            background-blend-mode: multiply; overflow-x: hidden;
+            overflow-x: hidden;
+            image-rendering: pixelated; /* Garante que as imagens fiquem em estilo pixel art */
         }
         
-        /* CAMADAS GLOBAIS: PRELOADER, OVERLAYS, MODAIS */
-        .preloader, .modal-overlay {
+        .preloader {
             position: fixed; inset: 0; z-index: 100;
-            display: flex; justify-content: center; align-items: center;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
+            background-color: #000;
             transition: opacity 0.5s ease, visibility 0.5s ease;
         }
-        .preloader { background-color: var(--wood-color); }
         .preloader.is-hidden { opacity: 0; visibility: hidden; }
         .preloader__spinner {
-            width: 60px; height: 60px; border: 5px solid rgba(255, 215, 0, 0.3);
-            border-top-color: var(--gold-color); border-radius: 50%;
-            animation: spin 1s linear infinite;
+            width: 40px; height: 40px;
+            /* Ícone de spinner pixelado em branco */
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><path fill="%23FFF" d="M3 0v1h1v1h1V1H4V0H3zm1 4v1H3v1H2V5h1V4h1zM0 3v1h1v1h1V4H1V3H0zM5 3v1h1v1h1V4H6V3H5z"/></svg>');
+            animation: spin 0.5s steps(4) infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 0; }
-        
-        /* ESTILOS DOS MODAIS */
-        .modal-overlay {
-            background: rgba(0,0,0,0.8); opacity: 0; visibility: hidden; z-index: 102;
-        }
-        .modal-overlay.is-visible { opacity: 1; visibility: visible; }
-        .modal-box {
-            background-color: var(--paper-color); border: 10px solid;
-            border-image: linear-gradient(45deg, #4a3227, #8b6b5c) 1;
-            padding: 30px; max-width: 500px; width: 90%;
-            color: var(--text-dark); text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
-            transform: scale(0.9); transition: transform 0.3s ease;
-        }
-        .modal-overlay.is-visible .modal-box { transform: scale(1); }
-        .modal-box h3 { font-family: 'IM Fell English SC', serif; color: var(--wood-color); margin: 0 0 20px; }
-        .modal-input {
-            width: 100%; padding: 10px; font-family: 'Segoe UI', sans-serif;
-            border: 2px solid var(--wood-color); background: #fff;
-            margin-bottom: 20px; font-size: 1rem;
-        }
-        .modal-actions { display: flex; justify-content: center; gap: 15px; }
-        .modal-message { margin-top: 15px; font-weight: bold; min-height: 1.2em; }
-        .modal-message.success { color: var(--success-color); }
-        .modal-message.error { color: var(--danger-color); }
-        
-        main.main-container {
-            position: relative; z-index: 1; padding: clamp(30px, 5vw, 50px);
-            max-width: 900px; width: 95%; background-color: var(--wood-color);
-            border: 15px solid; border-image: linear-gradient(45deg, #4a3227, #8b6b5c) 1;
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0,0,0,0.3);
-            color: var(--paper-color);
+        .game-container {
+            position: relative; z-index: 2; padding: clamp(20px, 4vw, 30px);
+            max-width: 800px; width: 95%; 
+            background: var(--ui-main);
+            border: 4px solid var(--ui-border-dark);
+            box-shadow: inset 0 0 0 4px var(--ui-border-light), 0 10px 30px rgba(0,0,0,0.5);
+            /* Borda pixelada tripla */
         }
 
         h1 {
-            font-family: 'IM Fell English SC', serif; font-size: clamp(2.5rem, 6vw, 4rem);
-            color: var(--gold-color); text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.9);
-            margin: 0 0 30px; border-bottom: 3px double var(--gold-color);
-            padding-bottom: 15px; display: inline-block;
+            font-size: clamp(2rem, 6vw, 3rem);
+            color: var(--text-highlight);
+            text-shadow: 3px 3px #000;
+            margin: 0 0 40px;
         }
 
-        .btn-group { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .btn-group { display: flex; flex-direction: column; align-items: center; gap: 20px; }
         
         .btn {
-            display: inline-block; background: linear-gradient(145deg, var(--metal-color), #8d8d8d);
-            color: var(--wood-color); border: 3px outset #c0c0c0; padding: 12px 25px;
-            text-decoration: none; font-weight: 900; font-size: 1rem;
-            transition: all var(--transition-speed-fast) ease-in-out; cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255,255,255,0.3);
-            letter-spacing: 1.5px; text-transform: uppercase; font-family: 'Cinzel', serif;
+            position: relative;
+            background: var(--ui-main);
+            color: var(--text-light);
+            border: 4px solid var(--ui-border-dark);
+            box-shadow: inset 0 0 0 4px var(--ui-border-light);
+            padding: 15px 35px;
+            text-decoration: none; font-size: 1.2rem;
+            transition: all 0.1s ease-in-out;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, auto; /* Cursor de mãozinha pixelada */
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
         }
         .btn:hover, .btn:focus-visible {
-            background: linear-gradient(145deg, var(--gold-color), var(--gold-dark-color));
-            color: var(--text-dark); border-style: inset; border-color: #fff8e1;
-            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6), inset 0 1px 2px rgba(0,0,0,0.3);
-            transform: translateY(-4px) scale(1.05); outline: none;
+            background: var(--ui-border-light);
+            color: var(--bg-dark);
+            outline: none;
         }
-        .btn.is-active {
-            background: linear-gradient(145deg, var(--danger-color), #7f1d1d);
-            color: white; border-color: #fca5a5;
-        }
-        .btn--danger { background: var(--danger-color); color: white; }
-        .btn--secondary { background: var(--metal-color); }
+        .btn:active { transform: translateY(2px); /* Efeito de botão pressionado */ }
+        .btn.is-active { background: var(--danger-color); color: white; } /* Estado ativo para o botão de toggle */
         
-        .character-list {
-            display: grid; grid-template-rows: 0fr; opacity: 0; visibility: hidden;
-            transition: all var(--transition-speed-slow) ease;
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 102; display: flex;
+            justify-content: center; align-items: center;
+            background: rgba(0,0,0,0.8); opacity: 0; visibility: hidden;
+            transition: all 0.3s ease;
         }
-        .character-list.is-visible { grid-template-rows: 1fr; opacity: 1; visibility: visible; margin-top: 40px; }
-        .char-card-group {
-            overflow: hidden; background: rgba(247, 243, 232, 0.9);
-            border: 5px solid var(--wood-color); border-radius: 10px;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
-            color: var(--text-dark); padding: 30px;
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 25px;
+        .modal-overlay.is-visible { opacity: 1; visibility: visible; }
+        .modal-box {
+            background: var(--ui-main);
+            border: 4px solid var(--ui-border-dark);
+            box-shadow: inset 0 0 0 4px var(--ui-border-light);
+            padding: 30px; max-width: 500px; width: 90%;
+            color: var(--text-light);
+            transform: scale(0.9); transition: transform 0.3s ease;
+        }
+        .modal-overlay.is-visible .modal-box { transform: scale(1); }
+        .modal-box h3 { font-size: 1.2rem; margin-bottom: 20px; color: var(--text-highlight); }
+        .modal-input {
+            width: 100%; padding: 12px; font-family: 'Press Start 2P', cursive; font-size: 1rem;
+            background: var(--bg-dark); color: var(--text-light);
+            border: 2px solid var(--ui-border-light);
+            margin-bottom: 20px;
+        }
+        .modal-actions { display: flex; justify-content: center; gap: 15px; }
+        .modal-message { margin-top: 15px; font-weight: bold; min-height: 1.2em; font-size: 0.8rem; }
+        .modal-message.success { color: var(--success-color); }
+        .modal-message.error { color: var(--danger-color); }
+        /* Botões dentro do modal */
+        .btn--secondary { background: var(--ui-border-dark); } /* Um tom mais escuro de marrom para o botão secundário */
+        .btn--danger { background: var(--danger-color); } /* Botão de perigo */
+
+        .character-list-container {
+            max-height: 0; opacity: 0;
+            overflow: hidden;
+            transition: all 0.5s ease-in-out;
+        }
+        .character-list-container.is-visible { max-height: 100vh; opacity: 1; margin-top: 40px; }
+        
+        .scroll-content {
+            background: var(--bg-dark);
+            border: 4px solid var(--ui-border-dark);
+            box-shadow: inset 0 0 0 4px var(--ui-border-light);
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
         }
         
         .character-card {
-            background: var(--paper-color); border: 2px solid var(--wood-color);
-            border-radius: 8px; padding: 15px; width: 220px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            display: flex; flex-direction: column; justify-content: space-between;
-            opacity: 0; transform: translateY(20px);
-            transition: opacity 0.5s ease, transform 0.5s ease;
+            background: var(--ui-main);
+            border: 2px solid var(--ui-border-light);
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 64px 1fr auto; /* Layout para Mobile: Avatar, Info, Ações */
+            align-items: center;
+            gap: 15px;
+            opacity: 0; transform: translateX(-20px);
+            transition: all 0.3s ease-out;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, pointer;
         }
-        .character-card.is-in-view { opacity: 1; transform: translateY(0); }
-        .character-card.is-deleting { opacity: 0; transform: scale(0.8); }
+         @media (min-width: 576px) { /* Layout para telas maiores */
+            .character-card { grid-template-columns: 80px 1fr auto; }
+        }
+        .character-card:hover { background: var(--ui-border-dark); }
+        .character-card.is-in-view { opacity: 1; transform: translateX(0); }
+        .character-card.is-deleting { opacity: 0; transform: scale(0.9); }
 
         .character-card__avatar {
-            width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--gold-color);
-            margin: 0 auto 10px; object-fit: cover; background-color: var(--wood-color);
+            width: 100%; /* Ajusta a largura ao tamanho do slot */
+            aspect-ratio: 1 / 1; /* Mantém proporção quadrada */
+            border: 2px solid var(--ui-border-light);
+            object-fit: cover;
+            background-color: var(--bg-dark); /* Fundo caso o avatar não carregue */
         }
+        .char-info { text-align: left; }
+        .char-name { font-size: 1.1rem; color: var(--text-highlight); text-shadow: 2px 2px #000; word-break: break-all; }
+        .char-meta { font-size: 0.8rem; color: var(--ui-border-light); margin-top: 8px; }
         
-        .char-name { font-weight: 700; color: var(--wood-color); font-family: 'Cinzel', serif; font-size: 1.2rem; word-wrap: break-word; }
-        .char-meta { font-size: 0.75rem; color: #777; font-style: italic; }
-        
-        .card-actions {
-            margin-top: 15px; display: flex; flex-direction: column; gap: 10px;
+        .card-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+        .action-btn { 
+            font-family: 'Press Start 2P', cursive; background: none; border: none; 
+            color: var(--text-light); cursor: inherit; text-decoration: underline; font-size: 0.8rem; 
+            padding: 0; /* Remove padding padrão do botão */
         }
-        .action-btn {
-            display: flex; align-items: center; justify-content: center;
-            gap: 8px; padding: 8px 12px; font-size: 0.8rem;
-            border-radius: 5px; border-width: 2px;
+        .action-btn:hover { color: var(--text-highlight); }
+        .play-btn { font-size: 1rem; color: var(--success-color); font-weight: bold; }
+        .empty-message { 
+            color: var(--ui-border-light); 
+            font-size: 0.9rem; 
+            padding: 20px; 
+            background: var(--ui-border-dark); /* Fundo para a mensagem de vazio */
+            border: 2px solid var(--ui-border-light);
         }
-        .action-btn svg { width: 16px; height: 16px; fill: currentColor; }
-        .play-btn { background-color: var(--success-color); color: white; }
-        .delete-btn { background-color: var(--danger-color); color: white; }
     </style>
 </head>
 <body>
-    <div class="preloader" id="preloader"><div class="preloader__spinner"></div></div>
-    <div class="overlay"></div>
+    <div class="preloader" id="preloader"><div class="preloader__spinner"></div><p>CARREGANDO...</p></div>
 
-    <main class="main-container" id="mainContainer">
-        <h1>The Last SENAI</h1>
+    <main class="game-container">
+        <h1>THE LAST SENAI</h1>
         <div class="btn-group">
-            <a href="{{ route('character.create') }}" class="btn">Criar Novo Avatar</a>
+            <a href="{{ route('character.create') }}" class="btn">Novo Jogo</a>
             <button id="toggleListBtn" class="btn" aria-controls="characterList" aria-expanded="false"
-                    data-open-text="Acessar Livro de Jogadores" data-close-text="Fechar Livro">
-                Acessar Livro de Jogadores
+                    data-open-text="Carregar Jogo" data-close-text="Fechar">
+                Carregar Jogo
             </button>
         </div>
-        <div id="characterList" class="character-list">
-            <div class="char-card-group" id="cardGroup">
+
+        <section id="characterList" class="character-list-container">
+            <div class="scroll-content" id="cardGroup">
                 @if($characters->isEmpty())
-                    <p class="empty-message">O LIVRO DE REGISTROS ESTÁ VAZIO.</p>
+                    <p class="empty-message">NENHUM ARQUIVO ENCONTRADO</p>
                 @else
                     @foreach($characters as $char)
                         <div class="character-card" data-character-id="{{ $char->id }}" data-character-name="{{ $char->name }}">
-                            <img src="{{ asset($char->avatar ?? 'img/default.png') }}" alt="Avatar de {{ $char->name }}" class="character-card__avatar">
-                            <div>
+                            <img src="{{ asset($char->avatar ?? 'img/default-avatar.png') }}" alt="Avatar de {{ $char->name }}" class="character-card__avatar">
+                            <div class="char-info">
                                 <p class="char-name">{{ $char->name }}</p>
-                                <p class="char-meta">CLASSE: Operário Nv. {{ $char->level }}</p>
+                                <p class="char-meta">LV: {{ $char->level }} | HP: {{ $char->hp }}</p>
                             </div>
                             <div class="card-actions">
-                                <a href="{{ route('character.play', $char->id) }}" class="btn action-btn play-btn">
-                                    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                                    Jogar
-                                </a>
-                                <button class="btn action-btn edit-btn">
-                                    <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                                    Editar
-                                </button>
-                                <button class="btn action-btn delete-btn">
-                                    <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                                    Deletar
-                                </button>
+                                <a href="{{ route('character.play', $char->id) }}" class="action-btn play-btn">Jogar</a>
+                                <button class="action-btn edit-btn">Renomear</button>
+                                <button class="action-btn delete-btn">Apagar</button>
                             </div>
                         </div>
                     @endforeach
                 @endif
             </div>
-        </div>
+        </section>
     </main>
     
     <div class="modal-overlay" id="editModal">
         <div class="modal-box">
-            <h3>Editar Nome do Campeão</h3>
-            <input type="text" id="editNameInput" class="modal-input" placeholder="Novo nome do personagem">
+            <h3>RENOMEAR HEROI</h3>
+            <input type="text" id="editNameInput" class="modal-input" placeholder="NOVO NOME...">
             <div class="modal-actions">
-                <button class="btn btn--secondary" data-close-modal>Cancelar</button>
+                <button class="btn btn--secondary" data-close-modal>Voltar</button>
                 <button class="btn" id="saveEditBtn">Salvar</button>
             </div>
             <div class="modal-message" id="editMessage"></div>
@@ -214,11 +236,11 @@
 
     <div class="modal-overlay" id="deleteModal">
         <div class="modal-box">
-            <h3>Confirmar Exclusão</h3>
-            <p id="deleteModalText">Tem certeza que deseja deletar este campeão?</p>
+            <h3>APAGAR ARQUIVO</h3>
+            <p id="deleteModalText" style="font-size: 1rem; line-height: 1.5; margin-bottom: 20px;">Tem certeza que deseja apagar este herói?</p>
             <div class="modal-actions">
                 <button class="btn btn--secondary" data-close-modal>Cancelar</button>
-                <button class="btn btn--danger" id="confirmDeleteBtn">Deletar</button>
+                <button class="btn btn--danger" id="confirmDeleteBtn">Apagar</button>
             </div>
             <div class="modal-message" id="deleteMessage"></div>
         </div>
@@ -254,13 +276,12 @@
 
                 init() {
                     this.bindEvents();
-                    this.hidePreloader();
+                    this.hidePreloader(); // Esconde o preloader ao carregar o DOM
+                    document.body.style.visibility = 'visible'; // Garante que o body fique visível
                 },
 
                 hidePreloader() {
-                    window.addEventListener('load', () => {
-                        this.ui.preloader.classList.add('is-hidden');
-                    });
+                    this.ui.preloader.classList.add('is-hidden');
                 },
 
                 bindEvents() {
@@ -277,13 +298,14 @@
                         });
                     }
                     
+                    // Event listeners para os botões dos modais
                     this.ui.editModal.saveBtn.addEventListener('click', () => this.handleSaveEdit());
                     this.ui.deleteModal.confirmBtn.addEventListener('click', () => this.handleConfirmDelete());
                     
+                    // Event listeners para fechar modais
                     document.querySelectorAll('[data-close-modal]').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            this.closeModal(this.ui.editModal.overlay);
-                            this.closeModal(this.ui.deleteModal.overlay);
+                        btn.addEventListener('click', (e) => {
+                            this.closeModal(e.target.closest('.modal-overlay'));
                         });
                     });
                 },
@@ -297,11 +319,18 @@
                     if (this.state.isListVisible && !this.state.cardsAnimated) {
                         this.animateCards();
                         this.state.cardsAnimated = true;
+                    } else if (!this.state.isListVisible) {
+                        // Reset animation state if list is closed to re-animate next time
+                        this.ui.cardGroup.querySelectorAll('.character-card').forEach(card => {
+                            card.classList.remove('is-in-view');
+                        });
+                        this.state.cardsAnimated = false;
                     }
                 },
 
                 animateCards() {
                     this.ui.cardGroup.querySelectorAll('.character-card').forEach((card, index) => {
+                        // Atraso para animar os cards um por um
                         setTimeout(() => card.classList.add('is-in-view'), 100 * index);
                     });
                 },
@@ -320,9 +349,22 @@
                 openDeleteModal(card) {
                     this.state.activeCard = card;
                     const name = card.dataset.characterName;
-                    this.ui.deleteModal.text.textContent = `Tem certeza que deseja deletar "${name}" permanentemente?`;
+                    this.ui.deleteModal.text.innerHTML = `TEM CERTEZA QUE DESEJA APAGAR <strong style="color: var(--text-highlight);">${name}</strong>?`;
                     this.ui.deleteModal.message.textContent = '';
                     this.openModal(this.ui.deleteModal.overlay);
+                },
+
+                async sendRequest(url, options) {
+                    try {
+                        const response = await fetch(url, options);
+                        if (!response.ok) throw new Error('FALHA NO SERVIDOR.');
+                        const data = await response.json();
+                        if (!data.success) throw new Error(data.message || 'ERRO.');
+                        return data;
+                    } catch (error) {
+                        console.error("Erro na requisição:", error); // Adicionado para depuração
+                        throw error;
+                    }
                 },
 
                 async handleSaveEdit() {
@@ -330,34 +372,27 @@
                     const newName = this.ui.editModal.input.value.trim();
                     const messageEl = this.ui.editModal.message;
 
-                    if (!newName) {
-                        messageEl.textContent = 'O nome não pode ficar vazio.';
+                    if (!newName || newName.length < 3) {
+                        messageEl.textContent = 'NOME MUITO CURTO (MIN. 3 CARACTERES).';
                         messageEl.className = 'modal-message error';
                         return;
                     }
 
                     try {
-                        const response = await fetch(`/character/update/${id}`, {
+                        // Usando asset() para construir a URL corretamente no Blade
+                        await this.sendRequest(`{{ url('/game/update') }}/${id}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                             body: JSON.stringify({ name: newName })
                         });
                         
-                        if (!response.ok) throw new Error('Falha na comunicação com o servidor.');
-
-                        const data = await response.json();
-                        if (data.success) {
-                            const nameEl = this.state.activeCard.querySelector('.char-name');
-                            nameEl.textContent = newName;
-                            this.state.activeCard.dataset.characterName = newName;
-                            messageEl.textContent = 'Nome atualizado com sucesso!';
-                            messageEl.className = 'modal-message success';
-                            setTimeout(() => this.closeModal(this.ui.editModal.overlay), 1500);
-                        } else {
-                            throw new Error(data.message || 'Erro ao atualizar no servidor.');
-                        }
+                        this.state.activeCard.querySelector('.char-name').textContent = newName;
+                        this.state.activeCard.dataset.characterName = newName;
+                        messageEl.textContent = 'NOME ATUALIZADO!';
+                        messageEl.className = 'modal-message success';
+                        setTimeout(() => this.closeModal(this.ui.editModal.overlay), 1500);
                     } catch (error) {
-                        messageEl.textContent = `Erro: ${error.message}`;
+                        messageEl.textContent = `ERRO: ${error.message}`;
                         messageEl.className = 'modal-message error';
                     }
                 },
@@ -367,27 +402,26 @@
                     const messageEl = this.ui.deleteModal.message;
 
                     try {
-                        const response = await fetch(`/character/delete/${id}`, {
+                         // Usando asset() para construir a URL corretamente no Blade
+                         await this.sendRequest(`{{ url('/game/delete') }}/${id}`, {
                             method: 'DELETE',
                             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
                         });
-                        
-                        if (!response.ok) throw new Error('Falha na comunicação com o servidor.');
 
-                        const data = await response.json();
-                        if (data.success) {
-                            messageEl.textContent = 'Personagem deletado.';
-                            messageEl.className = 'modal-message success';
-                            this.state.activeCard.classList.add('is-deleting');
-                            setTimeout(() => {
-                                this.state.activeCard.remove();
-                                this.closeModal(this.ui.deleteModal.overlay);
-                            }, 500);
-                        } else {
-                            throw new Error(data.message || 'Erro ao deletar no servidor.');
-                        }
+                        messageEl.textContent = 'ARQUIVO APAGADO.';
+                        messageEl.className = 'modal-message success';
+                        this.state.activeCard.classList.add('is-deleting');
+                        
+                        this.state.activeCard.addEventListener('transitionend', () => {
+                            this.state.activeCard.remove();
+                            this.closeModal(this.ui.deleteModal.overlay);
+                            if (this.ui.cardGroup.querySelectorAll('.character-card').length === 0) {
+                                this.ui.cardGroup.innerHTML = '<p class="empty-message">NENHUM ARQUIVO ENCONTRADO</p>';
+                            }
+                        }, { once: true }); // Adiciona { once: true } para o listener ser removido após a primeira execução
+
                     } catch (error) {
-                        messageEl.textContent = `Erro: ${error.message}`;
+                        messageEl.textContent = `ERRO: ${error.message}`;
                         messageEl.className = 'modal-message error';
                     }
                 }

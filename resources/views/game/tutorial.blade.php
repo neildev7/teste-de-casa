@@ -8,153 +8,110 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="icon" href="{{ asset('img/logo.png') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --paper-color: #f7f3e8;
-            --wood-color: #5d4037;
-            --metal-color: #a9a9aa;
-            --gold-color: #ffd700;
-            --text-light: #f0e9d9; 
+            --bg-dark: #1a1c2c;
+            --ui-main: #5a3a2b; /* Marrom principal */
+            --ui-border-light: #a18c7c; /* Marrom claro */
+            --ui-border-dark: #3f2a1f; /* Marrom escuro */
+            --text-light: #ffffff;
+            --text-highlight: #ffc800;
         }
 
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'IM Fell English', serif;
-            background: var(--paper-color) url("{{ asset('img/giphy.gif') }}") no-repeat center center fixed;
+            font-family: 'Press Start 2P', cursive;
+            background: url("{{ asset('img/giphy.gif') }}") no-repeat center center fixed;
             background-size: cover;
-            text-align: center;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            background-color: var(--bg-dark);
             background-blend-mode: multiply;
-        }
-
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 0;
-        }
-        
-        .main-container {
-            position: relative;
-            z-index: 1;
-            padding: clamp(30px, 5vw, 50px) clamp(20px, 4vw, 40px);
-            max-width: 800px; /* Aumentado para caber mais texto */
-            width: 100%;
-            background-color: var(--wood-color);
-            border: 15px solid;
-            border-image: linear-gradient(45deg, var(--metal-color), #8b8b8b) 1;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
             color: var(--text-light);
+            image-rendering: pixelated;
+        }
+
+        .overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: -1; }
+        
+        .dialog-box {
+            position: relative; z-index: 1;
+            padding: 25px;
+            max-width: 800px;
+            width: 100%;
+            background: var(--ui-main);
+            border: 4px solid var(--ui-border-dark);
+            box-shadow: inset 0 0 0 4px var(--ui-border-light), 0 10px 30px rgba(0,0,0,0.5);
             opacity: 0;
-            transform: translateY(20px);
-            animation: fadeInUp 0.8s 0.2s forwards ease-out;
+            animation: fadeIn 0.5s 0.2s forwards;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
         }
 
-        h1 {
-            font-family: 'IM Fell English SC', serif;
-            font-size: clamp(2rem, 5vw, 2.8rem); /* Um pouco maior */
-            color: var(--gold-color);
-            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.8);
-            margin-bottom: 25px;
-        }
-
-        h3 {
-            font-family: 'Cinzel', serif;
-            font-weight: 700;
-            color: var(--gold-color);
-            font-size: 1.5rem; /* Mais destaque */
-            margin-top: 35px;
-            margin-bottom: 15px;
-            border-top: 1px solid rgba(255, 215, 0, 0.3);
-            padding-top: 25px;
-            letter-spacing: 1px;
-        }
-
-        .tutorial-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            border: 4px solid var(--gold-color);
-            padding: 4px;
-            background: var(--wood-color);
+        .dialog-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-        }
-
-        p {
-            font-size: 1.15rem; /* Levemente maior para legibilidade */
-            line-height: 1.7;
-            margin-bottom: 15px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        p strong, .highlight {
-            color: var(--gold-color);
-            font-weight: normal;
-        }
-
-        .tutorial-list {
-            text-align: left;
-            display: inline-block;
-            margin-top: 10px;
-            padding-left: 20px;
-            max-width: 550px; /* Garante que listas longas quebrem a linha */
+            padding-bottom: 20px;
+            border-bottom: 4px solid var(--ui-border-dark);
         }
         
-        .tutorial-list li {
-            font-size: 1.1rem;
-            margin-bottom: 12px;
-            line-height: 1.6;
-            padding-left: 10px;
+        .npc-avatar {
+            width: 80px;
+            height: 80px;
+            border: 4px solid var(--ui-border-light);
+            object-fit: cover;
+            background: var(--bg-dark);
+            flex-shrink: 0;
         }
-
-        .tutorial-list li::marker {
-            color: var(--gold-color);
+        
+        .dialog-title {
             font-size: 1.2rem;
+            color: var(--text-highlight);
+            text-shadow: 2px 2px #000;
+            text-align: left;
+        }
+        
+        .dialog-content {
+            font-size: 1rem;
+            line-height: 1.8;
+            text-align: left;
+            flex-grow: 1;
+        }
+        .dialog-content strong {
+            color: var(--text-highlight);
         }
 
-        .btn {
-            display: inline-block;
-            background: var(--gold-color);
-            color: var(--wood-color);
-            border: 3px outset var(--gold-color);
-            padding: 15px 35px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 1.1rem;
-            transition: all 0.2s ease-in-out;
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            letter-spacing: 1px;
+        .next-button {
+            position: absolute;
+            bottom: 15px;
+            right: 25px;
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 1rem;
             text-transform: uppercase;
-            font-family: 'Cinzel', serif;
-            margin-top: 35px;
+            text-shadow: 2px 2px #000;
+            animation: blink 1.5s infinite steps(1);
+            text-decoration: none;
+            font-family: 'Press Start 2P', cursive;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, auto;
         }
-
-        .btn:hover {
-            background-color: #ffed4a;
-            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
-            transform: translateY(-3px);
+        .next-button::after {
+            content: ' ▼';
+            color: var(--text-highlight);
         }
-
-        @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes blink {
+            50% { opacity: 0.5; }
         }
     </style>
 </head>
@@ -162,41 +119,68 @@
 
 <div class="overlay"></div>
 
-<main class="main-container">
-    <h1>O Pergaminho do Mestre</h1>
-    <img src="{{ asset('img/avatar-4.png') }}" class="tutorial-avatar" alt="Avatar de Ramon Moraes">
-
-    <p>Saudações, <strong class="highlight">{{ $character->name }}</strong>! Eu sou <strong>Ramon Moraes</strong>, o guardião desta era e seu guia através dos perigos de <strong>Pixelândia</strong>.</p>
-    <p>O destino te escolheu. Sente-se, pois a história que vou contar é a sua.</p>
-
-    <h3>📜 A Lenda de Pixelândia</h3>
-    <p>Nosso mundo foi forjado por código e magia, um paraíso de paz. Mas a cada milênio, ocorre o "Grande Reset", um evento que reescreve a realidade. O último reset falhou, deixando para trás um <strong class="highlight">Eco Sombrio</strong>.</p>
-    <p>Este eco corrompe a terra e manifesta criaturas de pesadelo: Goblins, Orcs e até mesmo o lendário Dragão que antes nos protegia. Sua missão é purificar a terra e descobrir o segredo por trás da falha do Reset.</p>
-
-    <h3>⚔️ Seus Atributos</h3>
-    <p>Seu poder é definido por seus atributos. Na próxima etapa, você distribuirá pontos para moldar seu herói. Entenda o que cada um faz:</p>
-    <ul class="tutorial-list">
-        <li>❤️ <strong>HP (Pontos de Vida):</strong> Sua vitalidade. Se chegar a zero, a jornada termina.</li>
-        <li>✨ <strong>MP (Pontos de Magia):</strong> Energia para usar habilidades especiais.</li>
-        <li>⚔️ <strong>Ataque:</strong> Aumenta o dano dos seus ataques físicos.</li>
-        <li>🛡️ <strong>Defesa:</strong> Reduz o dano que você recebe de ataques físicos.</li>
-        <li>⚡ <strong>Velocidade:</strong> Define quem ataca primeiro em combate (em futuras atualizações).</li>
-        <li>🔥 <strong>Ataque Especial:</strong> Aumenta o poder das suas magias e habilidades.</li>
-        <li>🔮 <strong>Defesa Especial:</strong> Reduz o dano de ataques mágicos inimigos.</li>
-    </ul>
-
-    <h3>📜 Comandos de Batalha</h3>
-    <p>Em combate, você terá opções cruciais para sobreviver:</p>
-    <ul class="tutorial-list">
-        <li><strong>Ataque Físico:</strong> Um golpe básico que não custa MP.</li>
-        <li><strong>Feitiços e Habilidades:</strong> Ataques poderosos que consomem MP.</li>
-        <li><strong>Poção:</strong> Use uma de suas poções para restaurar HP em um momento de aperto.</li>
-    </ul>
+<main class="dialog-box">
+    <header class="dialog-header">
+        <img src="{{ asset('img/avatar-4.png') }}" class="npc-avatar" alt="Mestre do Jogo">
+        <h1 class="dialog-title">Mestre Ramon</h1>
+    </header>
     
-    <form action="{{ route('character.allocate', $character->id) }}" method="get">
-        <button type="submit" class="btn">Entendido, Mestre! Prosseguir!</button>
-    </form>
+    <div class="dialog-content" id="dialogContent">
+        </div>
+
+    <a href="{{ route('character.allocate', $character->id) }}" id="nextButton" class="next-button" style="display: none;">Prosseguir</a>
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const dialogContent = document.getElementById('dialogContent');
+    const nextButton = document.getElementById('nextButton');
+    
+    // As diferentes "páginas" do diálogo
+    const pages = [
+        `Saudações, {{ $character->name }}! O destino de Pixelândia repousa sobre seus ombros. A jornada será árdua, mas sua lenda começa agora...`,
+        `O 'Grande Reset' falhou, deixando um Eco Sombrio para trás. Criaturas corrompidas agora vagam pela terra. Sua missão é purificá-las.`,
+        `Para sobreviver, você deve dominar seus atributos: HP para resistir, MP para conjurar magias e ATAQUE para destruir seus inimigos.`,
+        `Prepare-se. Na próxima tela, você irá forjar seu poder distribuindo seus pontos de atributo. Escolha com sabedoria. Boa sorte, herói!`
+    ];
+    
+    let currentPage = 0;
+    
+    function typeWriter(text, i = 0) {
+        if (i < text.length) {
+            dialogContent.innerHTML += text.charAt(i);
+            setTimeout(() => typeWriter(text, i + 1), 30); // Velocidade da digitação
+        } else {
+            // Quando terminar de digitar, mostra o botão para avançar
+            nextButton.style.display = 'block';
+            if (currentPage >= pages.length - 1) {
+                nextButton.textContent = "FORJAR HERÓI";
+            } else {
+                nextButton.textContent = "CONTINUAR";
+            }
+        }
+    }
+
+    function showNextPage(e) {
+        if(currentPage >= pages.length - 1) {
+            // Se for a última página, o link já vai para o 'allocate'
+            return;
+        }
+        
+        e.preventDefault(); // Impede o link de navegar se não for a última página
+        currentPage++;
+        dialogContent.innerHTML = '';
+        nextButton.style.display = 'none';
+        typeWriter(pages[currentPage]);
+    }
+
+    // Inicia o diálogo
+    typeWriter(pages[0]);
+    
+    // Configura o evento para o botão de avançar
+    nextButton.addEventListener('click', showNextPage);
+});
+</script>
 
 </body>
 </html>

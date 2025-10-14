@@ -9,6 +9,11 @@ class Character extends Model
 {
     use HasFactory;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'avatar',
@@ -21,5 +26,7 @@ class Character extends Model
         'special_defense',
         'level',
         'exp',
+        'gold',     // <-- ADICIONADO
+        'potions',  // <-- ADICIONADO
     ];
 }
