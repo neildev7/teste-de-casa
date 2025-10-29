@@ -7,7 +7,7 @@
 <title>Batalha Sombria | {{ $character->name }}</title>
 <link rel="icon" href="{{ asset('img/logo.png') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
 <style>
@@ -15,6 +15,8 @@
         --bg-dark: #1a1c2c; --ui-main: #5a3a2b; --ui-border-light: #a18c7c;
         --ui-border-dark: #3f2a1f; --text-light: #ffffff; --text-highlight: #ffc800;
         --hp-color: #e53935; --mp-color: #1e88e5; --xp-color: #fdd835;
+        --poison-color: #9c27b0; --heal-color: #7cb342; --drain-color: #9c27b0;
+        --cursor-pointer: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, auto;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -25,179 +27,343 @@
         padding: 10px; background-color: var(--bg-dark);
         background-blend-mode: multiply; color: var(--text-light);
         image-rendering: pixelated;
+        overflow: hidden;
     }
-    #story-intro { position: fixed; inset: 0; background: #000; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; padding: 20px; opacity: 1; transition: opacity 1s ease-out; }
+
+    /* --- ESTILOS DA INTRODUÇÃO --- */
+    #story-intro {
+        position: fixed; inset: 0; background: #000; color: #fff;
+        display: flex; flex-direction: column; justify-content: center;
+        align-items: center; z-index: 200; padding: 20px;
+        opacity: 1; transition: opacity 1s ease-out;
+        cursor: var(--cursor-pointer); outline: none; /* A11y */
+    }
     #story-text { font-size: 1.5rem; line-height: 1.8; max-width: 800px; text-align: center; }
-    #stage-title { font-size: 3rem; color: var(--text-highlight); margin-top: 40px; opacity: 0; transform: scale(0.5); text-shadow: 3px 3px #000; }
+    #stage-title {
+        font-size: 3rem; color: var(--text-highlight); margin-top: 40px;
+        opacity: 0; transform: scale(0.5); text-shadow: 3px 3px #000;
+    }
     #stage-title.visible { animation: stage-intro 1.5s forwards; }
+    .intro-prompt { /* Novo */
+        position: absolute; bottom: 30px; right: 30px;
+        font-size: 1rem; color: var(--text-light);
+        animation: blink 1.5s infinite steps(1);
+    }
     .battle-screen { visibility: hidden; opacity: 0; width: 100%; max-width: 1200px; display: flex; flex-direction: column; align-items: center; gap: 15px; transition: opacity 1s; z-index: 2; }
     .battle-screen.visible { visibility: visible; opacity: 1; }
+    /* --- FIM DOS ESTILOS DA INTRODUÇÃO --- */
+
     .combatants-area { display: flex; justify-content: center; align-items: flex-start; gap: 20px; width: 100%; }
     .combatant-card {
         width: 320px; background: var(--ui-main);
         border: 4px solid var(--ui-border-dark);
         box-shadow: inset 0 0 0 4px var(--ui-border-light);
         padding: 15px; display: flex; flex-direction: column; align-items: center;
+        position: relative; /* Para popups */
     }
     .combatant-card h2 { color: var(--text-highlight); font-size: 1.2rem; margin-bottom: 10px; text-shadow: 2px 2px #000; }
     .combatant-avatar { width: 120px; height: 120px; border: 4px solid var(--ui-border-light); margin-bottom: 15px; object-fit: cover; background-color: var(--bg-dark); }
+    
+    /* Novo: Ícones de Status */
+    .status-effects {
+        position: absolute; top: 80px; left: 15px;
+        display: flex; flex-direction: column; gap: 5px;
+    }
+    .status-icon {
+        width: 24px; height: 24px;
+        border: 2px solid var(--ui-border-light);
+        font-size: 0.7rem; color: white;
+        display: flex; justify-content: center; align-items: center;
+        text-shadow: 1px 1px #000;
+    }
+    .status-icon.poison { background-color: var(--poison-color); }
+    .status-icon.drain { background-color: var(--drain-color); } /* Para o Mago */
+
     .stat-bar { width: 100%; height: 20px; background-color: var(--bg-dark); border: 2px solid var(--ui-border-light); margin-bottom: 8px; position: relative; }
     .stat-bar-fill { height: 100%; transition: width 0.5s ease-out; }
     .stat-bar-fill.hp { background: var(--hp-color); } .stat-bar-fill.mp { background: var(--mp-color); } .stat-bar-fill.xp { background: var(--xp-color); }
     .stat-bar-text { position: absolute; inset: 0; font-size: 0.8rem; color: white; text-shadow: 1px 1px #000; line-height: 18px; text-align: center; }
     .player-inventory { width: 100%; margin-top: 10px; padding-top: 10px; border-top: 2px solid var(--ui-border-light); display: flex; justify-content: space-around; font-size: 0.9rem; }
     .inventory-item { display: flex; align-items: center; gap: 8px; }
+    
     .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; width: 100%; }
-    .action-btn { background: var(--ui-border-light); color: var(--ui-border-dark); border: 2px solid var(--ui-border-dark); padding: 10px 5px; font-weight: 700; font-size: 0.8rem; transition: all 0.1s; cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, auto; font-family: 'Press Start 2P', cursive; }
+    .action-btn { 
+        background: var(--ui-border-light); color: var(--ui-border-dark); 
+        border: 2px solid var(--ui-border-dark); padding: 10px 5px; 
+        font-weight: 700; font-size: 0.8rem; transition: all 0.1s; 
+        cursor: var(--cursor-pointer); font-family: 'Press Start 2P', cursive;
+        outline: none;
+    }
     .action-btn:hover:not(:disabled) { background: var(--text-highlight); }
+    .action-btn:focus-visible { /* A11y */
+        background: var(--text-highlight);
+        box-shadow: 0 0 0 2px var(--bg-dark), 0 0 0 4px var(--text-highlight);
+    }
     .action-btn:active:not(:disabled) { transform: translateY(2px); }
     .action-btn:disabled { background: #555; color: #999; cursor: not-allowed; border-color: #333; }
+    
     .battle-log { width: 100%; max-width: 800px; height: 150px; background: var(--ui-main); border: 4px solid var(--ui-border-dark); box-shadow: inset 0 0 0 4px var(--ui-border-light); padding: 15px; overflow-y: auto; color: var(--text-light); font-size: 0.9rem; line-height: 1.6; text-align: left; }
     .battle-log::-webkit-scrollbar { width: 12px; } .battle-log::-webkit-scrollbar-track { background: var(--ui-border-dark); } .battle-log::-webkit-scrollbar-thumb { background: var(--ui-border-light); border: 2px solid var(--ui-border-dark); }
-    .log-player { color: #87ceeb; } .log-enemy { color: #f08080; } .log-system { color: #fafad2; } .log-heal { color: #7cb342; } .log-crit, .log-lvlup { color: var(--text-highlight); }
-    .log-drain { color: #9c27b0; }
-    @keyframes fadeIn { to { opacity: 1; } }
-    .damage-popup { position: absolute; top: 30%; left: 50%; transform: translateX(-50%); font-size: 2rem; font-weight: bold; color: #ff4500; text-shadow: 2px 2px #000; animation: damagePopup 1s forwards; pointer-events: none; } .crit { color: var(--text-highlight); } .heal { color: #7cb342; } .shake { animation: shake 0.4s; } .flash-red { animation: flashRed 0.2s; }
+    .log-player { color: #87ceeb; } .log-enemy { color: #f08080; } .log-system { color: #fafad2; } .log-heal { color: var(--heal-color); } .log-crit, .log-lvlup { color: var(--text-highlight); } .log-drain { color: var(--drain-color); }
+    
+    .damage-popup { position: absolute; top: 30%; left: 50%; transform: translateX(-50%); font-size: 2rem; font-weight: bold; color: #ff4500; text-shadow: 2px 2px #000; animation: damagePopup 1s forwards; pointer-events: none; } .crit { color: var(--text-highlight); } .heal { color: var(--heal-color); } .miss { color: #999; font-size: 1.5rem; }
+    .shake { animation: shake 0.4s; } .flash-red { animation: flashRed 0.2s; }
+    
     .modal-overlay { position: fixed; inset: 0; z-index: 102; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.8); opacity: 0; visibility: hidden; transition: all 0.3s ease; }
     .modal-overlay.is-visible { opacity: 1; visibility: visible; }
     .modal-box { background: var(--ui-main); border: 4px solid var(--ui-border-dark); box-shadow: inset 0 0 0 4px var(--ui-border-light); padding: 30px; max-width: 600px; width: 90%; color: var(--text-light); transform: scale(0.9); transition: transform 0.3s ease; text-align: center;}
     .modal-overlay.is-visible .modal-box { transform: scale(1); }
     .modal-box h2 { font-size: 1.5rem; margin-bottom: 20px; color: var(--text-highlight); text-shadow: 2px 2px #000; }
     .modal-box p { font-size: 1rem; line-height: 1.6; }
-    .modal-box a { margin-top: 30px; display: inline-block; padding: 15px 35px; }
-    @keyframes damagePopup { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -80px); opacity: 0; } } @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } }
+    .btn { background: var(--ui-main); color: var(--text-light); border: 4px solid var(--ui-border-dark); box-shadow: inset 0 0 0 4px var(--ui-border-light); padding: 15px 35px; text-decoration: none; font-size: 1.2rem; transition: all 0.1s; cursor: var(--cursor-pointer); font-family: 'Press Start 2P', cursive; text-transform: uppercase; outline: none; }
+    .btn:hover:not(:disabled) { background: var(--ui-border-light); color: var(--bg-dark); }
+    .btn:focus-visible { background: var(--ui-border-light); color: var(--bg-dark); box-shadow: inset 0 0 0 4px var(--ui-border-light), 0 0 0 4px var(--text-highlight); }
+    .modal-box .btn { margin-top: 30px; display: inline-block; }
+    
+    @keyframes damagePopup { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -80px); opacity: 0; } }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } }
     @keyframes flashRed { 50% { filter: brightness(3); } }
     @keyframes stage-intro { 0% { opacity: 0; transform: scale(0.5); } 70% { opacity: 1; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+    @keyframes blink { 50% { opacity: 0.5; } }
     @media (max-width: 768px) { .combatants-area { flex-direction: column; align-items: center; gap: 20px; } .combatant-card { width: 100%; max-width: 400px; } }
 </style>
 </head>
 <body>
 
-<div id="story-intro">
-    <p id="story-text"></p>
+<div id="story-intro" tabindex="0"> <p id="story-text"></p>
     <h1 id="stage-title">FASE 2</h1>
-</div>
+    <div id="introPrompt" class="intro-prompt" style="display: none;">PRESSIONE ENTER</div> </div>
 
 <div class="battle-screen">
     <div class="combatants-area">
         <div class="combatant-card" id="playerCard">
-            <h2 id="playerName"></h2>
+            <div class="status-effects" id="playerStatus"></div> <h2 id="playerName"></h2>
             <img src="{{ asset($character->avatar) }}" class="combatant-avatar" alt="Avatar do Jogador">
-            <div class="stat-bar"><div class="stat-bar-fill hp" id="playerHpBar"></div><div class="stat-bar-text" id="playerHpText"></div></div>
-            <div class="stat-bar"><div class="stat-bar-fill mp" id="playerMpBar"></div><div class="stat-bar-text" id="playerMpText"></div></div>
-            <div class="stat-bar"><div class="stat-bar-fill xp" id="playerXpBar"></div><div class="stat-bar-text" id="playerXpText"></div></div>
+            <div class="stat-bar"><div class="stat-bar-fill hp" id="playerHpBar"></div><div class="stat-bar-text" id="playerHpText" aria-live="polite"></div></div>
+            <div class="stat-bar"><div class="stat-bar-fill mp" id="playerMpBar"></div><div class="stat-bar-text" id="playerMpText" aria-live="polite"></div></div>
+            <div class="stat-bar"><div class="stat-bar-fill xp" id="playerXpBar"></div><div class="stat-bar-text" id="playerXpText" aria-live="polite"></div></div>
             <div class="player-inventory">
-                <div class="inventory-item">OURO: <span id="playerGold"></span></div>
-                <div class="inventory-item">POÇÕES: <span id="playerPotions"></span></div>
+                <div class="inventory-item">OURO: <span id="playerGold" aria-live="polite"></span></div>
+                <div class="inventory-item">POÇÕES: <span id="playerPotions" aria-live="polite"></span></div>
             </div>
             <div class="actions-grid" id="actionsGrid"></div>
         </div>
         <div class="combatant-card" id="enemyCard">
-            <h2 id="enemyName"></h2>
+            <div class="status-effects" id="enemyStatus"></div> <h2 id="enemyName"></h2>
             <img src="" class="combatant-avatar" id="enemyAvatar" alt="Avatar do Inimigo">
-            <div class="stat-bar"><div class="stat-bar-fill hp" id="enemyHpBar"></div><div class="stat-bar-text" id="enemyHpText"></div></div>
+            <div class="stat-bar"><div class="stat-bar-fill hp" id="enemyHpBar"></div><div class="stat-bar-text" id="enemyHpText" aria-live="polite"></div></div>
         </div>
     </div>
-    <div class="battle-log" id="battleLog"></div>
-</div>
+    <div class="battle-log" id="battleLog" role="log" aria-live="polite"></div> </div>
 
-<div class="modal-overlay" id="endgameModal">
-     <div class="modal-box">
-        <h2 id="modalTitle"></h2>
-        <p id="modalText"></p>
-        <a href="{{ route('home') }}" class="btn">REINICIAR</a>
+<div class="modal-overlay" id="endgameModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-box">
+        <h2 id="modalTitle">TÍTULO</h2>
+        <p id="modalText">Mensagem...</p>
+        <a href="{{ route('home') }}" class="btn" id="modalLink">AÇÃO</a>
     </div>
 </div>
 
 <script>
+// --- Novo: Gerenciador de Áudio ---
+const AudioManager = {
+    sounds: {
+        // 'attack': new Audio('path/to/attack.wav'),
+        // 'heal': new Audio('path/to/heal.wav'),
+        // 'crit': new Audio('path/to/crit.wav'),
+        // 'levelUp': new Audio('path/to/levelUp.wav'),
+        // 'enemyAttack': new Audio('path/to/enemyAttack.wav'),
+        // 'manaDrain': new Audio('path/to/manaDrain.wav'), // Novo som
+        // 'playerHit': new Audio('path/to/playerHit.wav'),
+        // 'victory': new Audio('path/to/victory.wav'),
+        // 'defeat': new Audio('path/to/defeat.wav'),
+    },
+    play(key) {
+        if (this.sounds[key]) {
+            this.sounds[key].currentTime = 0;
+            this.sounds[key].play();
+        }
+    }
+};
+
+// --- LÓGICA DA INTRODUÇÃO (Melhorada com skip) ---
 const storyText = `APÓS A VITÓRIA, {{ $character->name }} VIAJA PARA AS TERRAS SOMBRIAS DO NORTE. UM MAL ANTIGO DESPERTOU, E NOVOS DESAFIOS O AGUARDAM...`;
 
 const Intro = {
-    storyContainer: document.getElementById('story-intro'), storyTextEl: document.getElementById('story-text'), stageTitleEl: document.getElementById('stage-title'), battleScreenEl: document.querySelector('.battle-screen'),
-    typewriter(text, i = 0) { if (i < text.length) { this.storyTextEl.innerHTML += text.charAt(i); setTimeout(() => this.typewriter(text, i + 1), 50); } else { setTimeout(() => this.showStageTitle(), 2000); } },
-    showStageTitle() { this.stageTitleEl.classList.add('visible'); setTimeout(() => this.hideIntro(), 2500); },
-    hideIntro() { this.storyContainer.style.opacity = '0'; this.storyContainer.addEventListener('transitionend', () => { this.storyContainer.remove(); this.showBattleScreen(); }, { once: true }); },
-    showBattleScreen() { this.battleScreenEl.classList.add('visible'); Game.init(); },
-    start() { this.typewriter(storyText); }
+    storyContainer: document.getElementById('story-intro'),
+    storyTextEl: document.getElementById('story-text'),
+    stageTitleEl: document.getElementById('stage-title'),
+    promptEl: document.getElementById('introPrompt'),
+    battleScreenEl: document.querySelector('.battle-screen'),
+    isTyping: false,
+    timeoutID: null,
+    
+    start() {
+        this.storyContainer.focus();
+        this.bindEvents();
+        this.typewriter(storyText);
+    },
+    bindEvents() {
+        this.storyContainer.addEventListener('click', () => this.handleAdvance());
+        this.storyContainer.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.handleAdvance();
+        });
+    },
+    handleAdvance() {
+        if (this.isTyping) {
+            this.skipTyping();
+        }
+    },
+    skipTyping() {
+        clearTimeout(this.timeoutID);
+        this.isTyping = false;
+        this.storyTextEl.innerHTML = storyText;
+        this.promptEl.style.display = 'none';
+        setTimeout(() => this.showStageTitle(), 1000);
+    },
+    typewriter(text, i = 0) {
+        this.isTyping = true;
+        if (i < text.length) {
+            this.storyTextEl.innerHTML += text.charAt(i);
+            this.timeoutID = setTimeout(() => this.typewriter(text, i + 1), 50);
+        } else {
+            this.isTyping = false;
+            this.promptEl.style.display = 'none';
+            setTimeout(() => this.showStageTitle(), 2000);
+        }
+    },
+    showStageTitle() {
+        this.stageTitleEl.classList.add('visible');
+        setTimeout(() => this.hideIntro(), 2500);
+    },
+    hideIntro() {
+        this.storyContainer.style.opacity = '0';
+        this.storyContainer.addEventListener('transitionend', () => {
+            this.storyContainer.remove();
+            this.showBattleScreen();
+        }, { once: true });
+    },
+    showBattleScreen() {
+        this.battleScreenEl.classList.add('visible');
+        Game.init();
+    }
 };
 
+// --- LÓGICA PRINCIPAL DO JOGO ---
 const Game = {
     state: {
         player: {
             name: "{{ $character->name }}",
-            hp: {{ $character->hp }}, maxHp: {{ $character->hp }},
-            mp: {{ $character->mp }}, maxMp: {{ $character->mp }},
-            attack: {{ $character->attack }}, defense: {{ $character->defense }},
-            sp_attack: {{ $character->special_attack }}, sp_defense: {{ $character->special_defense }},
-            speed: {{ $character->speed }},
-            level: {{ $character->level }}, 
+            // Bug Crítico Corrigido: Usando 'max_hp' e 'max_mp'
+            hp: {{ $character->hp ?? 100 }},
+            maxHp: {{ $character->max_hp ?? 100 }},
+            mp: {{ $character->mp ?? 50 }},
+            maxMp: {{ $character->max_mp ?? 50 }},
+            attack: {{ $character->attack ?? 10 }},
+            defense: {{ $character->defense ?? 5 }},
+            sp_attack: {{ $character->special_attack ?? 10 }},
+            sp_defense: {{ $character->special_defense ?? 5 }},
+            speed: {{ $character->speed ?? 10 }},
+            level: {{ $character->level ?? 1 }},
             xp: {{ $character->exp ?? 0 }},
             gold: {{ $character->gold ?? 0 }},
             potions: {{ $character->potions ?? 3 }},
-            xpToNextLevel: 150,
+            xpToNextLevel: 150, // Será recalculado no init
             statusEffects: {}
         },
         enemy: {},
         enemies: [
-            { name:"Cavaleiro Caído", hp: 200, attack: 45, defense: 30, xp: 150, gold: 75, specialChance: 0.3, specialMoves: [{ type: 'shieldBash', power: 1.8 }], img:"{{ asset('img/cavaleiro-caido.png') }}" },
-            { name:"Mago Sombrio", hp: 140, attack: 30, defense: 18, xp: 220, gold: 100, specialChance: 0.4, specialMoves: [{ type: 'manaDrain', amount: 25 }], img:"{{ asset('img/mago-sombrio.png') }}" },
-            { name:"Lorde Demônio", hp: 300, attack: 60, defense: 35, xp: 500, gold: 250, specialChance: 0.25, enrageThreshold: 0.5, img:"{{ asset('img/lorde-demonio.png') }}" }
+            { name:"Cavaleiro Caído", hp: 200, attack: 45, defense: 30, sp_defense: 20, xp: 150, gold: 75, specialChance: 0.3, specialMoves: [{ type: 'shieldBash', power: 1.8 }], img:"{{ asset('img/cavaleiro-caido.png') }}" },
+            { name:"Mago Sombrio", hp: 140, attack: 30, defense: 18, sp_defense: 30, xp: 220, gold: 100, specialChance: 0.4, specialMoves: [{ type: 'manaDrain', amount: 25 }], img:"{{ asset('img/mago-sombrio.png') }}" },
+            { name:"Lorde Demônio", hp: 300, attack: 60, defense: 35, sp_defense: 25, xp: 500, gold: 250, specialChance: 0.25, enrageThreshold: 0.5, img:"{{ asset('img/lorde-demonio.png') }}" }
         ],
         currentEnemyIndex: 0,
         gameState: 'PLAYER_TURN',
     },
     
     elements: {
-        player: { card: document.getElementById('playerCard'), name: document.getElementById('playerName'), hpBar: document.getElementById('playerHpBar'), hpText: document.getElementById('playerHpText'), mpBar: document.getElementById('playerMpBar'), mpText: document.getElementById('playerMpText'), xpBar: document.getElementById('playerXpBar'), xpText: document.getElementById('playerXpText'), actions: document.getElementById('actionsGrid'), goldDisplay: document.getElementById('playerGold'), potionsDisplay: document.getElementById('playerPotions') },
-        enemy: { card: document.getElementById('enemyCard'), name: document.getElementById('enemyName'), hpBar: document.getElementById('enemyHpBar'), hpText: document.getElementById('enemyHpText'), avatar: document.getElementById('enemyAvatar') },
+        player: { card: document.getElementById('playerCard'), name: document.getElementById('playerName'), hpBar: document.getElementById('playerHpBar'), hpText: document.getElementById('playerHpText'), mpBar: document.getElementById('playerMpBar'), mpText: document.getElementById('playerMpText'), xpBar: document.getElementById('playerXpBar'), xpText: document.getElementById('playerXpText'), actions: document.getElementById('actionsGrid'), goldDisplay: document.getElementById('playerGold'), potionsDisplay: document.getElementById('playerPotions'), status: document.getElementById('playerStatus') },
+        enemy: { card: document.getElementById('enemyCard'), name: document.getElementById('enemyName'), hpBar: document.getElementById('enemyHpBar'), hpText: document.getElementById('enemyHpText'), avatar: document.getElementById('enemyAvatar'), status: document.getElementById('enemyStatus') },
         log: document.getElementById('battleLog'),
-        modal: { container: document.getElementById('endgameModal'), title: document.getElementById('modalTitle'), text: document.getElementById('modalText') }
+        modal: { container: document.getElementById('endgameModal'), title: document.getElementById('modalTitle'), text: document.getElementById('modalText'), link: document.getElementById('modalLink') }
     },
     
     actions: {
         attack: { name: 'ATAQUE', cost: 0, type: 'mp', target: 'enemy', basePower: 1, stat: 'attack' },
         skill: { name: 'MAGIA', cost: 10, type: 'mp', target: 'enemy', basePower: 1.5, stat: 'sp_attack' },
         ultimate: { name: 'ESPECIAL', cost: 25, type: 'mp', target: 'enemy', basePower: 2.5, stat: 'sp_attack' },
-        potion: { name: 'POÇÃO', cost: 1, type: 'potion', target: 'player', basePower: 60, stat: 'heal' },
+        potion: { name: 'POÇÃO', cost: 1, type: 'potion', target: 'player', basePower: 60, stat: 'heal' }, // Poção da Fase 2 cura mais
     },
 
-    init() { this.loadEnemy(); this.renderActionButtons(); this.updateUI(); this.logMessage(`UMA SOMBRA EMERGE... ${this.state.enemy.name.toUpperCase()} APARECE!`, 'log-system'); },
+    // ===== FUNÇÃO DE INICIALIZAÇÃO =====
+    init() { 
+        this.parseStats(); // Calcula XP e ajusta HP/MP
+        this.loadEnemy(); 
+        this.renderActionButtons(); 
+        this.updateUI(); 
+        this.logMessage(`UMA SOMBRA EMERGE... ${this.state.enemy.name.toUpperCase()} APARECE!`, 'log-system'); 
+    },
+    
+    parseStats() {
+        const p = this.state.player;
+        // Calcula o XP para o próximo nível com base no nível atual
+        p.xpToNextLevel = Math.floor(50 * Math.pow(p.level, 1.5));
+        
+        // Garante que a vida/mp atual não ultrapasse a máxima ao carregar
+        p.hp = Math.min(p.hp, p.maxHp);
+        p.mp = Math.min(p.mp, p.maxMp);
+    },
 
     calculateDamage(power, defense) {
         const effectiveDefense = defense * 0.5;
         const baseDamage = Math.max(1, power - effectiveDefense);
-        return Math.floor(baseDamage * (Math.random() * 0.4 + 0.8));
+        return Math.floor(baseDamage * (Math.random() * 0.4 + 0.8)); // 80%-120% variação
     },
     
+    // ===== TURNO DO JOGADOR =====
     executeTurn(actionKey) {
         if (this.state.gameState !== 'PLAYER_TURN') return;
         const action = this.actions[actionKey];
+        
         if (action.type === 'mp' && this.state.player.mp < action.cost) { this.logMessage('MP INSUFICIENTE!', 'log-system'); return; }
         if (action.type === 'potion' && this.state.player.potions <= 0) { this.logMessage('SEM POÇÕES!', 'log-system'); return; }
+        
         this.setGameState('PROCESSING');
         if (action.type === 'mp') this.state.player.mp -= action.cost; 
         if (action.type === 'potion') this.state.player.potions--;
+        
         this.logMessage(`${this.state.player.name} USA ${action.name.split('(')[0].trim()}!`, 'log-player');
+        
         if (action.stat === 'heal') {
             const healAmount = action.basePower;
             this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + healAmount);
             this.showPopup(healAmount, this.elements.player.card, true);
             this.logMessage(`${this.state.player.name} RECUPERA ${healAmount} HP.`, 'log-heal');
+            AudioManager.play('heal');
         } else {
+            // Melhoria: Magia usa 'sp_defense', Ataque usa 'defense'
+            const enemyDefense = (action.stat === 'attack') ? this.state.enemy.defense : (this.state.enemy.sp_defense || 0);
             const power = this.state.player[action.stat] * action.basePower;
-            let damage = (action.stat === 'attack') ? this.calculateDamage(power, this.state.enemy.defense) : this.calculateDamage(power, 0);
-            if (Math.random() < 0.2) {
+            let damage = this.calculateDamage(power, enemyDefense);
+            
+            let isCrit = false;
+            if (Math.random() < 0.2) { // 20% de chance de crítico
                 damage = Math.floor(damage * 1.5);
                 this.logMessage('ACERTO CRÍTICO!', 'log-crit');
-                this.elements.enemy.card.classList.add('shake');
-                setTimeout(() => this.elements.enemy.card.classList.remove('shake'), 400);
+                this.shake(this.elements.enemy.card);
+                AudioManager.play('crit');
+                isCrit = true;
+            } else {
+                AudioManager.play('attack');
             }
+            
             this.state.enemy.hp -= damage;
-            this.elements.enemy.card.classList.add('flash-red');
-            setTimeout(() => this.elements.enemy.card.classList.remove('flash-red'), 200);
-            this.showPopup(damage, this.elements.enemy.card, false, damage > power);
+            this.flash(this.elements.enemy.card, 'flash-red');
+            this.showPopup(damage, this.elements.enemy.card, false, isCrit);
         }
+        
         this.updateUI();
+        
         if (this.state.enemy.hp <= 0) {
             const defeatedEnemy = this.state.enemies[this.state.currentEnemyIndex];
             this.logMessage(`${defeatedEnemy.name.toUpperCase()} DERROTADO!`, 'log-system');
@@ -208,103 +374,260 @@ const Game = {
             setTimeout(() => this.nextEnemy(), 2000);
             return;
         }
+        
         setTimeout(() => this.enemyTurn(), 1500);
     },
 
+    // ===== TURNO DO INIMIGO =====
     enemyTurn() {
         this.setGameState('ENEMY_TURN');
         const enemy = this.state.enemy;
-        let damage;
+        let damage = 0; // Inicia o dano como 0
+
         if (enemy.enrageThreshold && enemy.hp / enemy.maxHp < enemy.enrageThreshold && !enemy.isEnraged) {
             enemy.isEnraged = true;
             enemy.attack = Math.floor(enemy.attack * 1.5);
             this.logMessage(`${enemy.name.toUpperCase()} ENTRA EM FÚRIA!`, 'log-enemy');
             damage = this.calculateDamage(enemy.attack, this.state.player.defense);
             this.logMessage(`${enemy.name.toUpperCase()} ATACA FURIOSAMENTE!`, 'log-enemy');
+            AudioManager.play('enemySpecial');
         } else if (enemy.specialMoves && Math.random() < enemy.specialChance) {
             const move = enemy.specialMoves[0];
             switch (move.type) {
                 case 'shieldBash':
                     this.logMessage(`${enemy.name.toUpperCase()} USA GOLPE DE ESCUDO!`, 'log-enemy');
-                    damage = this.calculateDamage(enemy.attack * move.power, this.state.player.defense * 0.5);
+                    damage = this.calculateDamage(enemy.attack * move.power, this.state.player.defense * 0.5); // Ignora metade da defesa
+                    AudioManager.play('enemyAttack');
                     break;
                 case 'manaDrain':
                     this.logMessage(`${enemy.name.toUpperCase()} USA DRENO DE MANA!`, 'log-enemy');
                     const drainedMp = Math.min(this.state.player.mp, move.amount);
                     this.state.player.mp -= drainedMp;
                     this.logMessage(`VOCÊ PERDEU ${drainedMp} DE MP!`, 'log-drain');
-                    damage = this.calculateDamage(enemy.attack * 0.5, this.state.player.defense);
+                    damage = this.calculateDamage(enemy.attack * 0.5, this.state.player.sp_defense); // Dano mágico fraco
+                    AudioManager.play('manaDrain');
                     break;
-                default: damage = this.calculateDamage(enemy.attack, this.state.player.defense);
+                default: 
+                    damage = this.calculateDamage(enemy.attack, this.state.player.defense);
+                    AudioManager.play('enemyAttack');
             }
         } else {
             damage = this.calculateDamage(enemy.attack, this.state.player.defense);
             this.logMessage(`${enemy.name.toUpperCase()} ATACA!`, 'log-enemy');
+            AudioManager.play('enemyAttack');
         }
-        this.state.player.hp -= damage;
-        this.elements.player.card.classList.add('flash-red');
-        setTimeout(() => this.elements.player.card.classList.remove('flash-red'), 200);
-        this.showPopup(damage, this.elements.player.card, false);
+        
+        if (damage > 0) {
+            this.state.player.hp -= damage;
+            this.flash(this.elements.player.card, 'flash-red');
+            this.shake(this.elements.player.card); // Feedback de dano
+            this.showPopup(damage, this.elements.player.card, false);
+            AudioManager.play('playerHit');
+        }
+
+        // Correção de Bug: Adiciona processamento de status e regen de MP
+        this.processStatusEffects();
+        this.state.player.mp = Math.min(this.state.player.maxMp, this.state.player.mp + 5); // Regen passiva
+        
         this.updateUI();
-        if (this.state.player.hp <= 0) { this.logMessage('VOCÊ FOI DERROTADO...', 'log-system'); this.gameOver(false); return; }
+        
+        if (this.state.player.hp <= 0) { 
+            this.logMessage('VOCÊ FOI DERROTADO...', 'log-system'); 
+            this.gameOver(false); 
+            return; 
+        }
+        
         setTimeout(() => this.setGameState('PLAYER_TURN'), 1000);
     },
     
-    gainXP(amount) { this.logMessage(`+${amount} XP!`, 'log-crit'); this.state.player.xp += amount; while (this.state.player.xp >= this.state.player.xpToNextLevel) { this.state.player.xp -= this.state.player.xpToNextLevel; this.state.player.level++; this.state.player.xpToNextLevel = Math.floor(this.state.player.xpToNextLevel * 1.5); this.state.player.maxHp += 20; this.state.player.maxMp += 15; this.state.player.attack += 5; this.state.player.defense += 4; this.state.player.sp_attack += 4; const healAmount = Math.floor(this.state.player.maxHp * 0.5); this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + healAmount); this.state.player.mp = this.state.player.maxMp; this.logMessage(`LEVEL UP! NÍVEL ${this.state.player.level}!`, 'log-lvlup'); } this.updateUI(); },
+    // ===== LÓGICAS DE ESTADO (Melhoradas) =====
+    processStatusEffects() {
+        // (Nenhum inimigo desta fase aplica status, mas a função está pronta)
+        // Ex: if (player.statusEffects.poison) { ... }
+        this.updateStatusIcons();
+    },
     
-    nextEnemy() { this.state.currentEnemyIndex++; if (this.state.currentEnemyIndex >= this.state.enemies.length) { this.gameOver(true); return; } this.loadEnemy(); this.updateUI(); this.logMessage(`UMA NOVA AMEAÇA: ${this.state.enemy.name.toUpperCase()}!`, 'log-system'); this.setGameState('PLAYER_TURN'); },
+    gainXP(amount) { 
+        this.logMessage(`+${amount} XP!`, 'log-crit'); 
+        this.state.player.xp += amount; 
+        while (this.state.player.xp >= this.state.player.xpToNextLevel) { 
+            this.state.player.xp -= this.state.player.xpToNextLevel; 
+            this.state.player.level++; 
+            this.state.player.xpToNextLevel = Math.floor(50 * Math.pow(this.state.player.level, 1.5));
+            this.state.player.maxHp += 20; this.state.player.maxMp += 15; 
+            this.state.player.attack += 5; this.state.player.defense += 4; 
+            this.state.player.sp_attack += 4; this.state.player.sp_defense += 3;
+            const healAmount = Math.floor(this.state.player.maxHp * 0.5); 
+            this.state.player.hp = Math.min(this.state.player.maxHp, this.state.player.hp + healAmount); 
+            this.state.player.mp = this.state.player.maxMp; 
+            this.logMessage(`LEVEL UP! NÍVEL ${this.state.player.level}!`, 'log-lvlup'); 
+            AudioManager.play('levelUp');
+        } 
+        this.updateUI(); 
+    },
+    
+    nextEnemy() { 
+        this.state.currentEnemyIndex++; 
+        if (this.state.currentEnemyIndex >= this.state.enemies.length) { 
+            this.gameOver(true); // Venceu a fase!
+            return; 
+        } 
+        this.loadEnemy(); 
+        this.updateUI(); 
+        this.logMessage(`UMA NOVA AMEAÇA: ${this.state.enemy.name.toUpperCase()}!`, 'log-system'); 
+        this.setGameState('PLAYER_TURN'); 
+    },
     
     loadEnemy() {
         this.state.enemy = { ...this.state.enemies[this.state.currentEnemyIndex] };
         this.state.enemy.maxHp = this.state.enemy.hp;
-        this.elements.enemy.avatar.src = this.state.enemy.img; // ✅ Linha que faltava
+        // Correção de Bug: Atualiza a imagem do inimigo
+        this.elements.enemy.avatar.src = this.state.enemy.img;
     },
     
     async gameOver(isVictory) {
         this.setGameState('GAME_OVER');
         if (isVictory) {
+            AudioManager.play('victory');
             this.logMessage('FASE CONCLUÍDA!', 'log-lvlup');
-            await this.saveProgress();
-            this.logMessage('VENDEDOR MÁGICO ENCONTRADO...', 'log-system');
-            setTimeout(() => { window.location.href = "{{ route('character.shop', ['id' => $character->id, 'next_stage' => 'play3']) }}"; }, 1500);
+            try {
+                // Correção de Bug: Espera o save ANTES de continuar
+                await this.saveProgress();
+                this.logMessage('PROGRESSO SALVO!', 'log-system');
+                this.showModal(
+                    'VITÓRIA!',
+                    'As sombras recuam. Você encontra um novo Vendedor Mágico...',
+                    "{{ route('character.shop', ['id' => $character->id, 'next_stage' => 'play3']) }}", // Vai para a loja, que leva à Fase 3
+                    'IR PARA A LOJA'
+                );
+            } catch (error) {
+                this.showModal(
+                    'ERRO DE CONEXÃO',
+                    'Não foi possível salvar seu progresso.',
+                    window.location.href,
+                    'TENTAR NOVAMENTE'
+                );
+            }
         } else {
-            const modal = this.elements.modal.container;
-            modal.innerHTML = `<div class="modal-box"><h2>FIM DE JOGO</h2><p>SUA JORNADA TERMINA AQUI...</p><a href="{{ route('home') }}" class="btn">REINICIAR</a></div>`;
-            this.openModal(modal);
+            AudioManager.play('defeat');
+            this.showModal(
+                'FIM DE JOGO',
+                'Sua jornada termina aqui...',
+                "{{ route('home') }}",
+                'REINICIAR'
+            );
         }
     },
     
     async saveProgress() {
         const playerData = this.state.player;
-        try { await fetch("{{ route('character.saveProgress', $character->id) }}", { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }, body: JSON.stringify(playerData) }); } catch (error) { console.error('Erro ao salvar o progresso:', error); }
+        try { 
+            const response = await fetch("{{ route('character.saveProgress', $character->id) }}", { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') }, 
+                body: JSON.stringify(playerData) 
+            });
+            if (!response.ok) throw new Error('Falha no servidor');
+            return await response.json();
+        } catch (error) { 
+            console.error('Erro ao salvar o progresso:', error); 
+            throw error;
+        }
     },
 
+    // ===== FUNÇÕES DE UI (HELPERS) =====
     updateUI() {
         const { player, enemy } = this.state;
         const { player: playerEl, enemy: enemyEl } = this.elements;
+        
         playerEl.name.textContent = `${player.name} LV ${player.level}`;
-        playerEl.hpBar.style.width = `${Math.max(0, player.hp / player.maxHp * 100)}%`; playerEl.hpText.textContent = `HP: ${Math.max(0, player.hp)}/${player.maxHp}`;
-        playerEl.mpBar.style.width = `${Math.max(0, player.mp / player.maxMp * 100)}%`; playerEl.mpText.textContent = `MP: ${Math.max(0, player.mp)}/${player.maxMp}`;
-        playerEl.xpBar.style.width = `${Math.max(0, player.xp / player.xpToNextLevel * 100)}%`; playerEl.xpText.textContent = `XP: ${player.xp}/${player.xpToNextLevel}`;
+        playerEl.hpBar.style.width = `${Math.max(0, player.hp / player.maxHp * 100)}%`; 
+        playerEl.hpText.textContent = `HP: ${Math.max(0, Math.ceil(player.hp))}/${player.maxHp}`;
+        playerEl.mpBar.style.width = `${Math.max(0, player.mp / player.maxMp * 100)}%`; 
+        playerEl.mpText.textContent = `MP: ${Math.max(0, Math.ceil(player.mp))}/${player.maxMp}`;
+        playerEl.xpBar.style.width = `${Math.max(0, player.xp / player.xpToNextLevel * 100)}%`; 
+        playerEl.xpText.textContent = `XP: ${player.xp}/${player.xpToNextLevel}`;
         playerEl.goldDisplay.textContent = player.gold;
         playerEl.potionsDisplay.textContent = player.potions;
-        enemyEl.name.textContent = enemy.name.toUpperCase(); enemyEl.avatar.src = enemy.img; enemyEl.hpBar.style.width = `${Math.max(0, enemy.hp / enemy.maxHp * 100)}%`; enemyEl.hpText.textContent = `HP: ${Math.max(0, enemy.hp)}/${enemy.maxHp}`;
-        const potionBtn = this.elements.player.actions.querySelector('[data-action-key="potion"]');
-        if (potionBtn) {
-            potionBtn.innerHTML = `POÇÃO (${player.potions})`;
-            potionBtn.disabled = player.potions <= 0 || this.state.gameState !== 'PLAYER_TURN';
+        
+        enemyEl.name.textContent = enemy.name.toUpperCase(); 
+        enemyEl.avatar.src = enemy.img; // Garante que a imagem está correta
+        enemyEl.hpBar.style.width = `${Math.max(0, enemy.hp / enemy.maxHp * 100)}%`; 
+        enemyEl.hpText.textContent = `HP: ${Math.max(0, Math.ceil(enemy.hp))}/${enemy.maxHp}`;
+        
+        // Atualiza ícones de status e botões
+        this.updateStatusIcons();
+        this.updateActionButtons();
+    },
+
+    updateActionButtons() {
+        const { player, gameState } = this.state;
+        this.elements.player.actions.querySelectorAll('button').forEach(btn => {
+            const actionKey = btn.dataset.actionKey;
+            const action = this.actions[actionKey];
+            
+            let disabled = (gameState !== 'PLAYER_TURN');
+            if (action.type === 'mp' && player.mp < action.cost) disabled = true;
+            if (action.type === 'potion' && player.potions < action.cost) disabled = true;
+            
+            btn.disabled = disabled;
+            
+            // Atualiza o texto da poção
+            if (action.type === 'potion') {
+                btn.innerHTML = `POÇÃO (${player.potions})`;
+            }
+        });
+    },
+
+    updateStatusIcons() {
+        const playerStatusEl = this.elements.player.status;
+        playerStatusEl.innerHTML = ''; // Limpa
+        if (this.state.player.statusEffects.poison) {
+            playerStatusEl.innerHTML += `<div class="status-icon poison" title="Envenenado">!!</div>`;
+        }
+        // Novo: Ícone de "Mana Drain" (pode ser o mesmo de poison ou um novo)
+        if (this.state.player.statusEffects.manaDrain) {
+             playerStatusEl.innerHTML += `<div class="status-icon drain" title="MP Drenado">MP-</div>`;
         }
     },
     
     renderActionButtons() {
         this.elements.player.actions.innerHTML = '';
-        for (const key in this.actions) { const action = this.actions[key]; const btn = document.createElement('button'); btn.className = 'action-btn'; btn.dataset.actionKey = key; btn.innerHTML = action.name; btn.onclick = () => this.executeTurn(key); this.elements.player.actions.appendChild(btn); }
+        for (const key in this.actions) { 
+            const action = this.actions[key]; 
+            const btn = document.createElement('button'); 
+            btn.className = 'action-btn'; 
+            btn.dataset.actionKey = key; 
+            btn.innerHTML = action.name; 
+            btn.onclick = () => this.executeTurn(key); 
+            if (action.type === 'mp' && action.cost > 0) {
+                btn.setAttribute('aria-label', `${action.name} (${action.cost} MP)`);
+            } else {
+                btn.setAttribute('aria-label', action.name);
+            }
+            this.elements.player.actions.appendChild(btn); 
+        }
     },
     
-    openModal(modal) { modal.classList.add('is-visible'); },
+    // Funções de feedback
     logMessage(message, className = '') { const p = document.createElement('p'); p.innerHTML = message; if (className) p.className = className; this.elements.log.appendChild(p); this.elements.log.scrollTop = this.elements.log.scrollHeight; },
     showPopup(text, targetCard, isHeal = false, isCrit = false) { const popup = document.createElement('div'); popup.className = 'damage-popup'; popup.textContent = text; if (isHeal) popup.classList.add('heal'); if (isCrit) popup.classList.add('crit'); targetCard.appendChild(popup); setTimeout(() => popup.remove(), 1000); },
-    setGameState(newState) { this.state.gameState = newState; const buttons = this.elements.player.actions.querySelectorAll('button'); buttons.forEach(btn => { if(btn.dataset.actionKey !== 'potion') { btn.disabled = (newState !== 'PLAYER_TURN'); } else { btn.disabled = (this.state.player.potions <= 0 || newState !== 'PLAYER_TURN'); } }); }
+    shake(element) { element.classList.add('shake'); setTimeout(() => element.classList.remove('shake'), 400); },
+    flash(element, className) { element.classList.add(className); setTimeout(() => element.classList.remove(className), 200); },
+
+    // Função de Modal Genérica
+    showModal(title, text, linkUrl, linkText) {
+        this.elements.modal.title.textContent = title;
+        this.elements.modal.text.innerHTML = text;
+        this.elements.modal.link.href = linkUrl;
+        this.elements.modal.link.textContent = linkText;
+        this.elements.modal.container.classList.add('is-visible');
+    },
+
+    setGameState(newState) { 
+        this.state.gameState = newState; 
+        this.updateActionButtons(); // Centraliza a lógica de desabilitar/habilitar botões
+    }
 };
 
 document.addEventListener('DOMContentLoaded', () => Intro.start());

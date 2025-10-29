@@ -19,6 +19,7 @@
             --success-color: #7cb342;
             --error-color: #e53935;
             --rarity-common: #ffffff; --rarity-uncommon: #1eff00; --rarity-rare: #0070dd;
+            --cursor-pointer: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, auto;
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -92,9 +93,13 @@
         }
         .item-card:hover { background: var(--ui-border-dark); }
         
-        .item-icon { font-size: 2rem; margin-bottom: 10px; }
+        /* Melhoria: Estrutura HTML/CSS mais limpa para o nome e raridade */
         .item-name { font-size: 0.9rem; margin-bottom: 8px; }
-        .rarity-tag { font-size: 0.7rem; padding: 2px 4px; display: inline-block; margin-bottom: 8px; border: 1px solid; }
+        .rarity-tag { 
+            font-size: 0.7rem; padding: 2px 4px; 
+            display: inline-block; margin-bottom: 12px; /* Aumentei a margem */
+            border: 1px solid; 
+        }
         .rarity-common { color: var(--rarity-common); border-color: var(--rarity-common); }
         .rarity-uncommon { color: var(--rarity-uncommon); border-color: var(--rarity-uncommon); }
         .rarity-rare { color: var(--rarity-rare); border-color: var(--rarity-rare); }
@@ -105,11 +110,17 @@
         .buy-btn {
             background: var(--ui-border-light); color: var(--bg-dark);
             border: 2px solid var(--ui-border-dark); padding: 8px;
-            font-size: 0.9rem; transition: all 0.1s; cursor: inherit;
+            font-size: 0.9rem; transition: all 0.1s; cursor: var(--cursor-pointer);
             font-family: 'Press Start 2P', cursive;
             margin-top: auto;
+            outline: none;
         }
         .buy-btn:hover:not(:disabled) { background: var(--text-highlight); }
+        /* Melhoria A11y: Estado de foco */
+        .buy-btn:focus-visible {
+            background: var(--text-highlight);
+            box-shadow: 0 0 0 2px var(--bg-dark), 0 0 0 4px var(--text-highlight);
+        }
         .buy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         
         .message-area {
@@ -121,6 +132,24 @@
             opacity: 0; transition: opacity 0.5s;
         }
         .message-area.visible { opacity: 1; }
+
+        .btn {
+            background: var(--ui-main); color: var(--text-light);
+            border: 4px solid var(--ui-border-dark);
+            box-shadow: inset 0 0 0 4px var(--ui-border-light);
+            padding: 15px 35px; text-decoration: none;
+            font-size: 1.2rem; transition: all 0.1s;
+            cursor: var(--cursor-pointer);
+            font-family: 'Press Start 2P', cursive;
+            text-transform: uppercase;
+            outline: none;
+        }
+        .btn:hover:not(:disabled) { background: var(--ui-border-light); color: var(--bg-dark); }
+        /* Melhoria A11y: Estado de foco */
+        .btn:focus-visible {
+            background: var(--ui-border-light); color: var(--bg-dark);
+            box-shadow: inset 0 0 0 4px var(--ui-border-light), 0 0 0 4px var(--text-highlight);
+        }
 
         .btn-proceed {
             margin-top: 30px; display: block;
@@ -142,114 +171,218 @@
             <aside class="character-panel panel">
                 <img src="{{ asset($character->avatar) }}" alt="Avatar do Herói" class="vendor-avatar">
                 <h3>{{ $character->name }}</h3>
-                <div class="gold-display">OURO: <span id="playerGold">{{ $character->gold }}</span></div>
+                <div class="gold-display">OURO: 
+                    <span id="playerGold" aria-live="polite">{{ $character->gold }}</span>
+                </div>
                 <ul class="stats-list">
-                    <li>HP: <span id="stat-hp">{{ $character->hp }}</span></li>
-                    <li>MP: <span id="stat-mp">{{ $character->mp }}</span></li>
-                    <li>ATQ: <span id="stat-attack">{{ $character->attack }}</span></li>
-                    <li>DEF: <span id="stat-defense">{{ $character->defense }}</span></li>
-                    <li>POÇÕES: <span id="stat-potions">{{ $character->potions }}</span></li>
+                    <li>HP: <span id="stat-hp" aria-live="polite">{{ $character->hp }}</span></li>
+                    <li>MP: <span id="stat-mp" aria-live="polite">{{ $character->mp }}</span></li>
+                    <li>ATQ: <span id="stat-attack" aria-live="polite">{{ $character->attack }}</span></li>
+                    <li>DEF: <span id="stat-defense" aria-live="polite">{{ $character->defense }}</span></li>
+                    <li>POÇÕES: <span id="stat-potions" aria-live="polite">{{ $character->potions }}</span></li>
                 </ul>
             </aside>
 
             <section class="items-panel panel">
                 <h3>MERCADORIAS</h3>
-                <div class="item-grid">
-                    <div class="item-card">
-                        <div class="item-name"><span class="rarity-tag rarity-common">COMUM</span></div>
+                <div class="item-grid" id="itemGrid">
+                    
+                    <div class="item-card" data-cost="50">
+                        <span class="rarity-tag rarity-common">COMUM</span>
                         <h4 class="item-name">POÇÃO DE VIDA</h4>
                         <p>+1 POÇÃO</p>
                         <p class="item-cost">50 OURO</p>
-                        <button class="buy-btn" data-item-id="potion">COMPRAR</button>
+                        <button class="buy-btn" data-item-id="potion" 
+                                aria-label="Comprar Poção de Vida (50 Ouro)">
+                            COMPRAR
+                        </button>
                     </div>
-                    <div class="item-card">
-                        <div class="item-name"><span class="rarity-tag rarity-uncommon">INCOMUM</span></div>
+
+                    <div class="item-card" data-cost="75">
+                        <span class="rarity-tag rarity-uncommon">INCOMUM</span>
                         <h4 class="item-name">ELIXIR DE MANA</h4>
                         <p>+50 MP (Recupera)</p>
                         <p class="item-cost">75 OURO</p>
-                        <button class="buy-btn" data-item-id="elixir">COMPRAR</button>
+                        <button class="buy-btn" data-item-id="elixir" 
+                                aria-label="Comprar Elixir de Mana (75 Ouro)">
+                            COMPRAR
+                        </button>
                     </div>
-                    <div class="item-card">
-                        <div class="item-name"><span class="rarity-tag rarity-common">COMUM</span></div>
+
+                    <div class="item-card" data-cost="150">
+                        <span class="rarity-tag rarity-common">COMUM</span>
                         <h4 class="item-name">ESPADA DE FERRO</h4>
                         <p>+5 ATAQUE</p>
                         <p class="item-cost">150 OURO</p>
-                        <button class="buy-btn" data-item-id="sword1">COMPRAR</button>
+                        <button class="buy-btn" data-item-id="sword1"
+                                aria-label="Comprar Espada de Ferro (150 Ouro)">
+                            COMPRAR
+                        </button>
                     </div>
-                    <div class="item-card">
-                        <div class="item-name"><span class="rarity-tag rarity-common">COMUM</span></div>
+
+                    <div class="item-card" data-cost="120">
+                        <span class="rarity-tag rarity-common">COMUM</span>
                         <h4 class="item-name">ESCUDO DE MADEIRA</h4>
                         <p>+5 DEFESA</p>
                         <p class="item-cost">120 OURO</p>
-                        <button class="buy-btn" data-item-id="shield1">COMPRAR</button>
+                        <button class="buy-btn" data-item-id="shield1"
+                                aria-label="Comprar Escudo de Madeira (120 Ouro)">
+                            COMPRAR
+                        </button>
                     </div>
                 </div>
             </section>
         </div>
 
-        <div class="message-area" id="messageArea"></div>
+        <div class="message-area" id="messageArea" role="alert" aria-live="assertive"></div>
         
         <a href="{{ route('character.' . $next_stage, $character->id) }}" class="btn btn-proceed">PROSSEGUIR</a>
     </main>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const buyButtons = document.querySelectorAll('.buy-btn');
-            const goldDisplay = document.getElementById('playerGold');
-            const messageArea = document.getElementById('messageArea');
-            const characterStats = {
-                hp: document.getElementById('stat-hp'), mp: document.getElementById('stat-mp'),
-                attack: document.getElementById('stat-attack'), defense: document.getElementById('stat-defense'),
-                potions: document.getElementById('stat-potions'),
-            };
+    document.addEventListener('DOMContentLoaded', () => {
+        // Melhoria: Encapsulando tudo em um objeto 'app'
+        const app = {
+            state: {
+                playerGold: 0,
+            },
+            ui: {
+                buyButtons: document.querySelectorAll('.buy-btn'),
+                goldDisplay: document.getElementById('playerGold'),
+                messageArea: document.getElementById('messageArea'),
+                itemCards: document.querySelectorAll('.item-card'),
+                stats: {
+                    hp: document.getElementById('stat-hp'),
+                    mp: document.getElementById('stat-mp'),
+                    attack: document.getElementById('stat-attack'),
+                    defense: document.getElementById('stat-defense'),
+                    potions: document.getElementById('stat-potions'),
+                }
+            },
+            urls: {
+                buy: "{{ route('character.shop.buy', $character->id) }}"
+            },
+            
+            init() {
+                // Melhoria Robustez: Armazena o ouro inicial no estado do JS
+                this.state.playerGold = parseInt(this.ui.goldDisplay.textContent) || 0;
+                this.bindEvents();
+                this.updateButtonStates(); // Desabilita botões que o jogador não pode pagar
+            },
 
-            const updateStatsUI = (newStats) => {
-                if (!newStats) return;
-                characterStats.hp.textContent = newStats.hp;
-                characterStats.mp.textContent = newStats.mp;
-                characterStats.attack.textContent = newStats.attack;
-                characterStats.defense.textContent = newStats.defense;
-                characterStats.potions.textContent = newStats.potions;
-            };
-
-            buyButtons.forEach(button => {
-                button.addEventListener('click', async () => {
-                    const itemId = button.dataset.itemId;
-                    button.disabled = true;
-                    button.textContent = '...';
-                    
-                    try {
-                        const response = await fetch("{{ route('character.shop.buy', $character->id) }}", {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            },
-                            body: JSON.stringify({ itemId: itemId })
-                        });
-                        const data = await response.json();
-
-                        messageArea.classList.add('visible');
-                        messageArea.textContent = data.message;
-                        messageArea.style.color = data.success ? 'var(--success-color)' : 'var(--error-color)';
-
-                        if(data.success) {
-                            goldDisplay.textContent = data.newGold;
-                            updateStatsUI(data.newStats);
-                        }
-                    } catch (error) {
-                        messageArea.classList.add('visible');
-                        messageArea.textContent = 'ERRO DE CONEXÃO.';
-                        console.error('Erro ao comprar:', error);
-                    } finally {
-                        setTimeout(() => {
-                             button.disabled = false;
-                             button.textContent = 'COMPRAR';
-                        }, 500);
+            bindEvents() {
+                this.ui.buyButtons.forEach(button => {
+                    button.addEventListener('click', (e) => this.handleBuyClick(e));
+                });
+            },
+            
+            /**
+             * Melhoria Robustez: Verifica o ouro do jogador e desabilita/habilita botões.
+             */
+            updateButtonStates() {
+                this.ui.itemCards.forEach(card => {
+                    const cost = parseInt(card.dataset.cost);
+                    const button = card.querySelector('.buy-btn');
+                    if (cost > this.state.playerGold) {
+                        button.disabled = true;
                     }
                 });
-            });
-        });
+            },
+
+            /**
+             * Atualiza o painel de stats do jogador
+             */
+            updateStatsUI(newStats) {
+                if (!newStats) return;
+                this.ui.stats.hp.textContent = newStats.hp;
+                this.ui.stats.mp.textContent = newStats.mp;
+                this.ui.stats.attack.textContent = newStats.attack;
+                this.ui.stats.defense.textContent = newStats.defense;
+                this.ui.stats.potions.textContent = newStats.potions;
+            },
+            
+            /**
+             * Mostra a mensagem de sucesso ou erro
+             */
+            showMessage(text, isSuccess) {
+                this.ui.messageArea.classList.add('visible');
+                this.ui.messageArea.textContent = text;
+                this.ui.messageArea.style.color = isSuccess ? 'var(--success-color)' : 'var(--error-color)';
+                
+                // Esconde a mensagem depois de 3 segundos
+                setTimeout(() => {
+                    this.ui.messageArea.classList.remove('visible');
+                }, 3000);
+            },
+            
+            /**
+             * Função unificada para enviar requisições
+             */
+            async sendRequest(url, options) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error('Falha no servidor.');
+                    
+                    const data = await response.json();
+                    if (!data.success) throw new Error(data.message || 'Erro desconhecido.');
+                    
+                    return data;
+                } catch (error) {
+                    console.error("Erro na requisição:", error);
+                    throw error;
+                }
+            },
+
+            /**
+             * Lida com o clique no botão de comprar
+             */
+            async handleBuyClick(event) {
+                const button = event.target;
+                const itemId = button.dataset.itemId;
+                
+                button.disabled = true;
+                button.textContent = '...';
+
+                try {
+                    const data = await this.sendRequest(this.urls.buy, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({ itemId: itemId })
+                    });
+                    
+                    // Sucesso!
+                    this.showMessage(data.message, true);
+                    
+                    // Melhoria Robustez: Atualiza o estado do ouro
+                    this.state.playerGold = data.newGold;
+                    this.ui.goldDisplay.textContent = data.newGold;
+                    this.updateStatsUI(data.newStats);
+                    
+                    // Melhoria Robustez: Re-avalia todos os botões
+                    this.updateButtonStates();
+
+                } catch (error) {
+                    // Falha (seja do sendRequest ou da lógica do servidor)
+                    this.showMessage(error.message, false);
+                } finally {
+                    // Reabilita o botão APENAS se o jogador puder comprá-lo novamente
+                    // (útil para itens empilháveis como poções)
+                    const card = button.closest('.item-card');
+                    const cost = parseInt(card.dataset.cost);
+                    
+                    if (this.state.playerGold >= cost) {
+                         button.disabled = false;
+                    }
+                    button.textContent = 'COMPRAR';
+                }
+            }
+        };
+
+        app.init();
+    });
     </script>
 </body>
 </html>

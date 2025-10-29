@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
     <title>The Last SENAI | Selecione seu Herói</title>
 
     <link rel="icon" href="{{ asset('img/logo.png') }}">
@@ -12,14 +14,16 @@
     
     <style>
         :root {
-            --bg-dark: #1a1c2c; /* Fundo principal escuro, pode ser um azul/cinza quase preto */
-            --ui-main: #5a3a2b; /* Marrom principal da UI */
-            --ui-border-light: #a18c7c; /* Marrom mais claro para bordas e destaques */
-            --ui-border-dark: #3f2a1f; /* Marrom mais escuro para bordas */
-            --text-light: #ffffff; /* Branco para o texto */
-            --text-highlight: #ffc800; /* Amarelo para destaques (ouro) */
-            --danger-color: #e53935; /* Vermelho para ações de perigo */
-            --success-color: #7cb342; /* Verde para ações de sucesso */
+            --bg-dark: #1a1c2c;
+            --ui-main: #5a3a2b;
+            --ui-border-light: #a18c7c;
+            --ui-border-dark: #3f2a1f;
+            --text-light: #ffffff;
+            --text-highlight: #ffc800;
+            --danger-color: #e53935;
+            --success-color: #7cb342;
+            /* Variável para o cursor pixelado */
+            --cursor-pointer: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, auto;
         }
 
         *, *::before, *::after { box-sizing: border-box; }
@@ -28,12 +32,12 @@
         body {
             margin: 0; padding: 20px; font-family: 'Press Start 2P', cursive;
             background-color: var(--bg-dark);
-            background-image: url("{{ asset('img/giphy.gif') }}"); /* Mantenha seu GIF de fundo */
-            background-size: cover; background-blend-mode: multiply; /* Para escurecer o GIF */
+            background-image: url("{{ asset('img/giphy.gif') }}");
+            background-size: cover; background-blend-mode: multiply;
             color: var(--text-light); text-align: center;
             min-height: 100vh; display: flex; justify-content: center; align-items: center;
             overflow-x: hidden;
-            image-rendering: pixelated; /* Garante que as imagens fiquem em estilo pixel art */
+            image-rendering: pixelated;
         }
         
         .preloader {
@@ -45,7 +49,6 @@
         .preloader.is-hidden { opacity: 0; visibility: hidden; }
         .preloader__spinner {
             width: 40px; height: 40px;
-            /* Ícone de spinner pixelado em branco */
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><path fill="%23FFF" d="M3 0v1h1v1h1V1H4V0H3zm1 4v1H3v1H2V5h1V4h1zM0 3v1h1v1h1V4H1V3H0zM5 3v1h1v1h1V4H6V3H5z"/></svg>');
             animation: spin 0.5s steps(4) infinite;
         }
@@ -57,7 +60,6 @@
             background: var(--ui-main);
             border: 4px solid var(--ui-border-dark);
             box-shadow: inset 0 0 0 4px var(--ui-border-light), 0 10px 30px rgba(0,0,0,0.5);
-            /* Borda pixelada tripla */
         }
 
         h1 {
@@ -78,7 +80,7 @@
             padding: 15px 35px;
             text-decoration: none; font-size: 1.2rem;
             transition: all 0.1s ease-in-out;
-            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, auto; /* Cursor de mãozinha pixelada */
+            cursor: var(--cursor-pointer); /* Usando a variável */
             font-family: 'Press Start 2P', cursive;
             text-transform: uppercase;
         }
@@ -87,8 +89,8 @@
             color: var(--bg-dark);
             outline: none;
         }
-        .btn:active { transform: translateY(2px); /* Efeito de botão pressionado */ }
-        .btn.is-active { background: var(--danger-color); color: white; } /* Estado ativo para o botão de toggle */
+        .btn:active { transform: translateY(2px); }
+        .btn.is-active { background: var(--danger-color); color: white; }
         
         .modal-overlay {
             position: fixed; inset: 0; z-index: 102; display: flex;
@@ -112,14 +114,19 @@
             background: var(--bg-dark); color: var(--text-light);
             border: 2px solid var(--ui-border-light);
             margin-bottom: 20px;
+            outline: none; /* Remove outline padrão */
+        }
+        /* Melhoria: Estado de foco para o input */
+        .modal-input:focus-visible {
+            border-color: var(--text-highlight);
+            box-shadow: 0 0 0 2px var(--text-highlight);
         }
         .modal-actions { display: flex; justify-content: center; gap: 15px; }
         .modal-message { margin-top: 15px; font-weight: bold; min-height: 1.2em; font-size: 0.8rem; }
         .modal-message.success { color: var(--success-color); }
         .modal-message.error { color: var(--danger-color); }
-        /* Botões dentro do modal */
-        .btn--secondary { background: var(--ui-border-dark); } /* Um tom mais escuro de marrom para o botão secundário */
-        .btn--danger { background: var(--danger-color); } /* Botão de perigo */
+        .btn--secondary { background: var(--ui-border-dark); }
+        .btn--danger { background: var(--danger-color); }
 
         .character-list-container {
             max-height: 0; opacity: 0;
@@ -136,21 +143,40 @@
             display: grid;
             grid-template-columns: 1fr;
             gap: 15px;
+            /* Melhoria: Scrollbar customizada para o tema */
+            max-height: 50vh; /* Adiciona uma altura máxima para o scroll aparecer */
+            overflow-y: auto;
         }
         
+        /* Melhoria: Scrollbar customizada (Webkit) */
+        .scroll-content::-webkit-scrollbar {
+            width: 12px;
+        }
+        .scroll-content::-webkit-scrollbar-track {
+            background: var(--ui-border-dark);
+            border-left: 2px solid var(--ui-border-light);
+        }
+        .scroll-content::-webkit-scrollbar-thumb {
+            background: var(--text-highlight);
+            border: 2px solid var(--bg-dark);
+        }
+        .scroll-content::-webkit-scrollbar-thumb:hover {
+            background: #fff;
+        }
+
         .character-card {
             background: var(--ui-main);
             border: 2px solid var(--ui-border-light);
             padding: 15px;
             display: grid;
-            grid-template-columns: 64px 1fr auto; /* Layout para Mobile: Avatar, Info, Ações */
+            grid-template-columns: 64px 1fr auto;
             align-items: center;
             gap: 15px;
             opacity: 0; transform: translateX(-20px);
             transition: all 0.3s ease-out;
-            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, pointer;
+            cursor: var(--cursor-pointer); /* Usando a variável */
         }
-         @media (min-width: 576px) { /* Layout para telas maiores */
+         @media (min-width: 576px) {
             .character-card { grid-template-columns: 80px 1fr auto; }
         }
         .character-card:hover { background: var(--ui-border-dark); }
@@ -158,11 +184,11 @@
         .character-card.is-deleting { opacity: 0; transform: scale(0.9); }
 
         .character-card__avatar {
-            width: 100%; /* Ajusta a largura ao tamanho do slot */
-            aspect-ratio: 1 / 1; /* Mantém proporção quadrada */
+            width: 100%;
+            aspect-ratio: 1 / 1;
             border: 2px solid var(--ui-border-light);
             object-fit: cover;
-            background-color: var(--bg-dark); /* Fundo caso o avatar não carregue */
+            background-color: var(--bg-dark);
         }
         .char-info { text-align: left; }
         .char-name { font-size: 1.1rem; color: var(--text-highlight); text-shadow: 2px 2px #000; word-break: break-all; }
@@ -172,7 +198,12 @@
         .action-btn { 
             font-family: 'Press Start 2P', cursive; background: none; border: none; 
             color: var(--text-light); cursor: inherit; text-decoration: underline; font-size: 0.8rem; 
-            padding: 0; /* Remove padding padrão do botão */
+            padding: 0;
+        }
+        /* Melhoria: Estado de foco para botões de ação */
+        .action-btn:focus-visible {
+            color: var(--text-highlight);
+            outline: 1px dotted var(--text-highlight);
         }
         .action-btn:hover { color: var(--text-highlight); }
         .play-btn { font-size: 1rem; color: var(--success-color); font-weight: bold; }
@@ -180,7 +211,7 @@
             color: var(--ui-border-light); 
             font-size: 0.9rem; 
             padding: 20px; 
-            background: var(--ui-border-dark); /* Fundo para a mensagem de vazio */
+            background: var(--ui-border-dark);
             border: 2px solid var(--ui-border-light);
         }
     </style>
@@ -222,10 +253,10 @@
         </section>
     </main>
     
-    <div class="modal-overlay" id="editModal">
+    <div class="modal-overlay" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
         <div class="modal-box">
-            <h3>RENOMEAR HEROI</h3>
-            <input type="text" id="editNameInput" class="modal-input" placeholder="NOVO NOME...">
+            <h3 id="editModalTitle">RENOMEAR HEROI</h3>
+            <input type="text" id="editNameInput" class="modal-input" placeholder="NOVO NOME..." aria-label="Novo nome para o herói">
             <div class="modal-actions">
                 <button class="btn btn--secondary" data-close-modal>Voltar</button>
                 <button class="btn" id="saveEditBtn">Salvar</button>
@@ -234,9 +265,9 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="deleteModal">
+    <div class="modal-overlay" id="deleteModal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
         <div class="modal-box">
-            <h3>APAGAR ARQUIVO</h3>
+            <h3 id="deleteModalTitle">APAGAR ARQUIVO</h3>
             <p id="deleteModalText" style="font-size: 1rem; line-height: 1.5; margin-bottom: 20px;">Tem certeza que deseja apagar este herói?</p>
             <div class="modal-actions">
                 <button class="btn btn--secondary" data-close-modal>Cancelar</button>
@@ -267,17 +298,24 @@
                         confirmBtn: document.getElementById('confirmDeleteBtn'),
                         message: document.getElementById('deleteMessage'),
                     },
+                    // Seleciona todos os overlays para fechar
+                    modalOverlays: document.querySelectorAll('.modal-overlay'),
+                    closeModalBtns: document.querySelectorAll('[data-close-modal]'),
                 },
                 state: {
                     isListVisible: false,
                     cardsAnimated: false,
                     activeCard: null,
+                    // Estados para controle de Acessibilidade (A11y)
+                    activeModal: null,
+                    focusableElements: [],
+                    lastFocusedElement: null,
                 },
 
                 init() {
                     this.bindEvents();
-                    this.hidePreloader(); // Esconde o preloader ao carregar o DOM
-                    document.body.style.visibility = 'visible'; // Garante que o body fique visível
+                    this.hidePreloader();
+                    document.body.style.visibility = 'visible';
                 },
 
                 hidePreloader() {
@@ -298,16 +336,25 @@
                         });
                     }
                     
-                    // Event listeners para os botões dos modais
                     this.ui.editModal.saveBtn.addEventListener('click', () => this.handleSaveEdit());
                     this.ui.deleteModal.confirmBtn.addEventListener('click', () => this.handleConfirmDelete());
                     
-                    // Event listeners para fechar modais
-                    document.querySelectorAll('[data-close-modal]').forEach(btn => {
+                    // Fechar modais (botões e overlay)
+                    this.ui.closeModalBtns.forEach(btn => {
                         btn.addEventListener('click', (e) => {
                             this.closeModal(e.target.closest('.modal-overlay'));
                         });
                     });
+
+                    // Melhoria A11y: Fechar modal ao clicar no overlay
+                    this.ui.modalOverlays.forEach(overlay => {
+                        overlay.addEventListener('click', (e) => {
+                            if (e.target === overlay) this.closeModal(overlay);
+                        });
+                    });
+
+                    // Melhoria A11y: Listeners globais de teclado
+                    document.addEventListener('keydown', (e) => this.handleKeydown(e));
                 },
 
                 handleToggleList() {
@@ -320,7 +367,6 @@
                         this.animateCards();
                         this.state.cardsAnimated = true;
                     } else if (!this.state.isListVisible) {
-                        // Reset animation state if list is closed to re-animate next time
                         this.ui.cardGroup.querySelectorAll('.character-card').forEach(card => {
                             card.classList.remove('is-in-view');
                         });
@@ -330,20 +376,82 @@
 
                 animateCards() {
                     this.ui.cardGroup.querySelectorAll('.character-card').forEach((card, index) => {
-                        // Atraso para animar os cards um por um
                         setTimeout(() => card.classList.add('is-in-view'), 100 * index);
                     });
                 },
 
-                openModal(modal) { modal.classList.add('is-visible'); },
-                closeModal(modal) { modal.classList.remove('is-visible'); },
+                // --- Melhorias de Acessibilidade (A11y) para Modais ---
+
+                openModal(modal) {
+                    this.state.lastFocusedElement = document.activeElement; // Salva quem abriu
+                    this.state.activeModal = modal;
+                    modal.classList.add('is-visible');
+                    
+                    // Pega todos os elementos focáveis dentro do modal
+                    this.state.focusableElements = Array.from(
+                        modal.querySelectorAll('button, [href], input, [tabindex]:not([tabindex="-1"])')
+                    ).filter(el => !el.disabled && el.offsetParent !== null); // Filtra visíveis/habilitados
+
+                    // Foca o primeiro elemento (ou o input, se existir)
+                    const input = modal.querySelector('.modal-input');
+                    if (input) input.focus();
+                    else if (this.state.focusableElements.length > 0) this.state.focusableElements[0].focus();
+                },
+                
+                closeModal(modal) {
+                    if (!modal || !modal.classList.contains('is-visible')) return;
+                    
+                    modal.classList.remove('is-visible');
+                    this.state.activeModal = null;
+                    
+                    // Devolve o foco para quem abriu o modal
+                    if (this.state.lastFocusedElement) this.state.lastFocusedElement.focus();
+                    
+                    this.state.focusableElements = [];
+                    this.state.lastFocusedElement = null;
+                },
+                
+                handleKeydown(e) {
+                    // Fecha com Escape
+                    if (e.key === 'Escape' && this.state.activeModal) {
+                        this.closeModal(this.state.activeModal);
+                    }
+                    // Prende o Tab dentro do modal
+                    if (e.key === 'Tab' && this.state.activeModal) {
+                        this.trapFocus(e);
+                    }
+                },
+
+                trapFocus(e) {
+                    if (this.state.focusableElements.length === 0) {
+                        e.preventDefault();
+                        return;
+                    }
+                    
+                    const firstElement = this.state.focusableElements[0];
+                    const lastElement = this.state.focusableElements[this.state.focusableElements.length - 1];
+                    
+                    if (e.shiftKey) { // Shift + Tab (voltando)
+                        if (document.activeElement === firstElement) {
+                            lastElement.focus(); // Vai para o último
+                            e.preventDefault();
+                        }
+                    } else { // Tab (avançando)
+                        if (document.activeElement === lastElement) {
+                            firstElement.focus(); // Vai para o primeiro
+                            e.preventDefault();
+                        }
+                    }
+                },
+                
+                // --- Fim das Melhorias de A11y ---
 
                 openEditModal(card) {
                     this.state.activeCard = card;
                     this.ui.editModal.input.value = card.dataset.characterName;
                     this.ui.editModal.message.textContent = '';
                     this.openModal(this.ui.editModal.overlay);
-                    this.ui.editModal.input.focus();
+                    // Não precisa mais do .focus() aqui, o openModal já cuida disso
                 },
 
                 openDeleteModal(card) {
@@ -354,7 +462,27 @@
                     this.openModal(this.ui.deleteModal.overlay);
                 },
 
-                async sendRequest(url, options) {
+                // Melhoria: Função de request mais robusta
+                async sendRequest(url, options = {}) {
+                    // Configura headers se não existirem
+                    if (!options.headers) {
+                        options.headers = new Headers();
+                    }
+
+                    // Pega o método
+                    const method = (options.method || 'GET').toUpperCase();
+
+                    // Adiciona CSRF token automaticamente para métodos não-GET
+                    if (method !== 'GET') {
+                        options.headers.set('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').content);
+                    }
+
+                    // Converte o body para JSON e seta o header, se for um objeto
+                    if (options.body && typeof options.body === 'object' && !options.headers.has('Content-Type')) {
+                        options.headers.set('Content-Type', 'application/json');
+                        options.body = JSON.stringify(options.body);
+                    }
+
                     try {
                         const response = await fetch(url, options);
                         if (!response.ok) throw new Error('FALHA NO SERVIDOR.');
@@ -362,7 +490,7 @@
                         if (!data.success) throw new Error(data.message || 'ERRO.');
                         return data;
                     } catch (error) {
-                        console.error("Erro na requisição:", error); // Adicionado para depuração
+                        console.error("Erro na requisição:", error);
                         throw error;
                     }
                 },
@@ -379,11 +507,9 @@
                     }
 
                     try {
-                        // Usando asset() para construir a URL corretamente no Blade
                         await this.sendRequest(`{{ url('/game/update') }}/${id}`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                            body: JSON.stringify({ name: newName })
+                            method: 'POST', // Pode ser PUT/PATCH também, depende da sua rota
+                            body: { name: newName } // A função sendRequest vai stringificar
                         });
                         
                         this.state.activeCard.querySelector('.char-name').textContent = newName;
@@ -402,10 +528,9 @@
                     const messageEl = this.ui.deleteModal.message;
 
                     try {
-                         // Usando asset() para construir a URL corretamente no Blade
                          await this.sendRequest(`{{ url('/game/delete') }}/${id}`, {
-                            method: 'DELETE',
-                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                            method: 'DELETE'
+                            // Não precisa de headers, sendRequest cuida do CSRF
                         });
 
                         messageEl.textContent = 'ARQUIVO APAGADO.';
@@ -414,11 +539,12 @@
                         
                         this.state.activeCard.addEventListener('transitionend', () => {
                             this.state.activeCard.remove();
-                            this.closeModal(this.ui.deleteModal.overlay);
+                            // Passa o modal correto para fechar
+                            this.closeModal(this.ui.deleteModal.overlay); 
                             if (this.ui.cardGroup.querySelectorAll('.character-card').length === 0) {
                                 this.ui.cardGroup.innerHTML = '<p class="empty-message">NENHUM ARQUIVO ENCONTRADO</p>';
                             }
-                        }, { once: true }); // Adiciona { once: true } para o listener ser removido após a primeira execução
+                        }, { once: true });
 
                     } catch (error) {
                         messageEl.textContent = `ERRO: ${error.message}`;

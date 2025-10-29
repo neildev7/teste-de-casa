@@ -19,6 +19,7 @@
             --text-light: #ffffff;
             --text-highlight: #ffc800;
             --success-color: #7cb342;
+            --cursor-pointer: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, auto;
         }
 
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -81,13 +82,22 @@
             display: block;
             margin-bottom: 10px;
         }
+        
+        /* Melhoria A11y: A barra agora é o "slider" focável */
         .attr-bar-wrapper {
             width: 100%;
             height: 28px;
             background: var(--ui-border-dark);
             border: 2px solid var(--ui-border-light);
             padding: 2px;
+            outline: none; /* Foco customizado abaixo */
         }
+        /* Melhoria A11y: Estado de foco para navegação com teclado */
+        .attr-bar-wrapper:focus-visible {
+            border-color: var(--text-highlight);
+            box-shadow: 0 0 0 3px var(--bg-dark), 0 0 0 5px var(--text-highlight);
+        }
+        
         .attr-bar-fill {
             width: 0;
             height: 100%;
@@ -107,10 +117,16 @@
             border: 2px solid var(--ui-border-dark);
             width: 45px; height: 35px;
             font-family: inherit; font-size: 1rem;
-            cursor: pointer;
+            cursor: var(--cursor-pointer); /* Usando variável */
+            outline: none;
         }
         .attr-btn:active { transform: translateY(2px); }
         .attr-btn:disabled { background: #555; color: #999; cursor: not-allowed; }
+        /* Melhoria A11y: Estado de foco para os botões */
+        .attr-btn:focus-visible {
+            border-color: var(--text-highlight);
+            box-shadow: 0 0 0 2px var(--bg-dark), 0 0 0 4px var(--text-highlight);
+        }
 
         .btn {
             background: var(--ui-main); color: var(--text-light);
@@ -118,10 +134,11 @@
             box-shadow: inset 0 0 0 4px var(--ui-border-light);
             padding: 15px 35px; text-decoration: none;
             font-size: 1.2rem; transition: all 0.1s;
-            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 8 8"><path fill="%23ffc800" d="M0 0v8l4-4-4-4z"/></svg>') 8 8, auto;
+            cursor: var(--cursor-pointer); /* Usando variável */
             font-family: 'Press Start 2P', cursive;
             text-transform: uppercase;
             margin-top: 20px;
+            width: 100%; /* Botão ocupa largura total */
         }
         .btn:hover:not(:disabled) { background: var(--ui-border-light); color: var(--bg-dark); }
         .btn:disabled { background: #555; color: #999; cursor: not-allowed; border-color: #333; box-shadow: inset 0 0 0 4px #777; animation: none; }
@@ -141,26 +158,37 @@
     <form method="POST" action="{{ route('character.allocate.store', $character->id) }}">
         @csrf
         <h1>FORJA DO HERÓI</h1>
-        <p class="points-display">PONTOS: <span id="pointsLeft">75</span></p>
+        
+        <p class="points-display" aria-live="polite">PONTOS: <span id="pointsLeft">75</span></p>
 
         <div id="attributesContainer">
             @php
                 $attributes = ['hp' => 'HP', 'mp' => 'MP', 'attack' => 'ATAQUE', 'defense' => 'DEFESA', 'speed' => 'VELOCIDADE', 'special_attack' => 'AT. ESPECIAL', 'special_defense' => 'DEF. ESPECIAL'];
+                $maxPerAttr = 50; // Definido aqui para ser usado no loop
             @endphp
 
             @foreach($attributes as $attr => $label)
             <div class="attribute-row" data-attr="{{ $attr }}">
-                <label for="{{ $attr }}">{{ $label }}</label>
-                <div class="attr-bar-wrapper">
+                <label id="{{ $attr }}Label">{{ $label }}</label>
+                
+                <div class="attr-bar-wrapper" 
+                     role="slider" 
+                     tabindex="0" 
+                     aria-labelledby="{{ $attr }}Label"
+                     aria-valuemin="0"
+                     aria-valuemax="{{ $maxPerAttr }}"
+                     aria-valuenow="{{ old($attr, 0) }}"
+                     aria-valuetext="{{ old($attr, 0) }} PONTOS">
                     <div class="attr-bar-fill" id="{{ $attr }}Bar"></div>
                 </div>
+                
                 <div class="attribute-controls">
                     <button type="button" class="attr-btn minus-btn" data-amount="5">-5</button>
                     <button type="button" class="attr-btn minus-btn" data-amount="1">-1</button>
-                    <span class="attr-value" id="{{ $attr }}Value">0</span>
-                    <button type="button" class="attr-btn plus-btn" data-amount="1">+1</button>
+                    <span class="attr-value" id="{{ $attr }}Value">0</span> <button type="button" class="attr-btn plus-btn" data-amount="1">+1</button>
                     <button type="button" class="attr-btn plus-btn" data-amount="5">+5</button>
-                    <input type="hidden" id="{{ $attr }}" name="{{ $attr }}" value="0">
+                    
+                    <input type="hidden" id="{{ $attr }}" name="{{ $attr }}" value="{{ old($attr, 0) }}">
                 </div>
             </div>
             @endforeach
@@ -171,75 +199,184 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const totalPoints = 75;
-    const maxPerAttr = 50;
-    
-    const pointsLeftEl = document.getElementById('pointsLeft');
-    const pointsDisplayEl = pointsLeftEl.parentElement;
-    const attributesContainer = document.getElementById('attributesContainer');
-    const submitBtn = document.getElementById('submitBtn');
-    
-    let pointsLeft = totalPoints;
+    const app = {
+        consts: {
+            TOTAL_POINTS: 75,
+            MAX_PER_ATTR: 50,
+        },
+        state: {
+            pointsLeft: 75,
+        },
+        ui: {
+            pointsLeftEl: document.getElementById('pointsLeft'),
+            pointsDisplayEl: document.getElementById('pointsLeft').parentElement,
+            attributesContainer: document.getElementById('attributesContainer'),
+            attributeRows: document.querySelectorAll('.attribute-row'),
+            submitBtn: document.getElementById('submitBtn'),
+        },
 
-    const updateUI = () => {
-        pointsLeftEl.textContent = pointsLeft;
-        submitBtn.disabled = (pointsLeft !== 0);
-        submitBtn.classList.toggle('no-shine', pointsLeft !== 0);
+        init() {
+            this.state.pointsLeft = this.consts.TOTAL_POINTS; // Reseta
+            let allocatedPoints = 0;
 
-        if (pointsLeft === 0) {
-            pointsDisplayEl.classList.add('complete');
-        } else {
-            pointsDisplayEl.classList.remove('complete');
-        }
+            // Melhoria Robustez: Lê os valores 'old()' do HTML
+            this.ui.attributeRows.forEach(row => {
+                const input = row.querySelector('input[type="hidden"]');
+                const valueEl = row.querySelector('.attr-value');
+                const slider = row.querySelector('[role="slider"]');
+                
+                const currentValue = parseInt(input.value); // Pega o valor 'old(x, 0)'
+                allocatedPoints += currentValue;
+                
+                // Atualiza o texto e ARIA com o valor 'old()'
+                valueEl.textContent = currentValue;
+                slider.setAttribute('aria-valuenow', currentValue);
+                slider.setAttribute('aria-valuetext', `${currentValue} PONTOS`);
+            });
 
-        document.querySelectorAll('.attribute-row').forEach(row => {
-            const input = row.querySelector('input[type="hidden"]');
-            const currentValue = parseInt(input.value);
-            const bar = row.querySelector('.attr-bar-fill');
-            bar.style.width = `${(currentValue / maxPerAttr) * 100}%`;
+            this.state.pointsLeft -= allocatedPoints; // Subtrai o que já foi alocado
             
-            const plusBtns = row.querySelectorAll('.plus-btn');
-            const minusBtns = row.querySelectorAll('.minus-btn');
+            this.bindEvents();
+            this.updateUI(); // Chama o update para definir o estado inicial correto das barras/botões
+        },
 
-            plusBtns.forEach(btn => {
-                const amount = parseInt(btn.dataset.amount) || 1;
-                btn.disabled = (pointsLeft < amount || currentValue >= maxPerAttr);
+        bindEvents() {
+            this.ui.attributesContainer.addEventListener('click', e => this.handleClick(e));
+            // Melhoria A11y: Adiciona listener de teclado para os sliders
+            this.ui.attributesContainer.addEventListener('keydown', e => this.handleKeydown(e));
+        },
+
+        /**
+         * Lida com cliques nos botões +/-
+         */
+        handleClick(event) {
+            const target = event.target;
+            if (!target.classList.contains('attr-btn') || target.disabled) return;
+
+            const row = target.closest('.attribute-row');
+            const attrName = row.dataset.attr;
+            const amount = parseInt(target.dataset.amount) || 1;
+            
+            const change = target.classList.contains('plus-btn') ? amount : -amount;
+            this.updateAttribute(attrName, change);
+        },
+
+        /**
+         * Melhoria A11y: Lida com navegação por teclado no slider
+         */
+        handleKeydown(event) {
+            const slider = event.target.closest('[role="slider"]');
+            if (!slider) return;
+
+            const row = slider.closest('.attribute-row');
+            const attrName = row.dataset.attr;
+            const input = document.getElementById(attrName);
+            const currentValue = parseInt(input.value);
+            let change = 0;
+
+            switch (event.key) {
+                case 'ArrowRight':
+                    change = 1;
+                    break;
+                case 'ArrowLeft':
+                    change = -1;
+                    break;
+                case 'PageUp':
+                    change = 5;
+                    break;
+                case 'PageDown':
+                    change = -5;
+                    break;
+                case 'Home':
+                    // Define para 0
+                    change = -currentValue;
+                    break;
+                case 'End':
+                    // Tenta definir para o máximo
+                    const maxAdd = Math.min(this.consts.MAX_PER_ATTR - currentValue, this.state.pointsLeft);
+                    change = maxAdd;
+                    break;
+                default:
+                    return; // Ignora outras teclas
+            }
+
+            event.preventDefault(); // Impede o scroll da página
+            if (change !== 0) {
+                this.updateAttribute(attrName, change);
+            }
+        },
+
+        /**
+         * Lógica central para alterar um atributo
+         * @param {string} attrName - O nome do atributo (ex: 'hp')
+         * @param {number} amount - O valor para adicionar (pode ser negativo)
+         */
+        updateAttribute(attrName, amount) {
+            const row = this.ui.attributesContainer.querySelector(`[data-attr="${attrName}"]`);
+            if (!row) return;
+
+            const input = document.getElementById(attrName);
+            const valueEl = document.getElementById(`${attrName}Value`);
+            const slider = row.querySelector('[role="slider"]');
+            let currentValue = parseInt(input.value);
+
+            let change = 0;
+            if (amount > 0) { // Adicionando pontos
+                const addAmount = Math.min(amount, this.consts.MAX_PER_ATTR - currentValue, this.state.pointsLeft);
+                currentValue += addAmount;
+                this.state.pointsLeft -= addAmount;
+                change = addAmount;
+            } else if (amount < 0) { // Removendo pontos
+                const subAmount = Math.min(Math.abs(amount), currentValue);
+                currentValue -= subAmount;
+                this.state.pointsLeft += subAmount;
+                change = -subAmount;
+            }
+
+            // Só atualiza a UI se algo mudou
+            if (change !== 0) {
+                input.value = currentValue;
+                valueEl.textContent = currentValue;
+                // Melhoria A11y: Atualiza os valores do slider
+                slider.setAttribute('aria-valuenow', currentValue);
+                slider.setAttribute('aria-valuetext', `${currentValue} PONTOS`);
+                
+                this.updateUI(); // Atualiza os estados globais (botões, pontos)
+            }
+        },
+
+        /**
+         * Atualiza a UI global (pontos restantes, barras, estados dos botões)
+         */
+        updateUI() {
+            this.ui.pointsLeftEl.textContent = this.state.pointsLeft;
+            this.ui.submitBtn.disabled = (this.state.pointsLeft !== 0);
+            
+            this.ui.pointsDisplayEl.classList.toggle('complete', this.state.pointsLeft === 0);
+
+            this.ui.attributeRows.forEach(row => {
+                const input = row.querySelector('input[type="hidden"]');
+                const currentValue = parseInt(input.value);
+                const bar = row.querySelector('.attr-bar-fill');
+                
+                // Atualiza a barra de progresso
+                bar.style.width = `${(currentValue / this.consts.MAX_PER_ATTR) * 100}%`;
+                
+                // Habilita/Desabilita botões
+                row.querySelectorAll('.plus-btn').forEach(btn => {
+                    const amount = parseInt(btn.dataset.amount) || 1;
+                    btn.disabled = (this.state.pointsLeft < amount || currentValue >= this.consts.MAX_PER_ATTR);
+                });
+                
+                row.querySelectorAll('.minus-btn').forEach(btn => {
+                    const amount = parseInt(btn.dataset.amount) || 1;
+                    btn.disabled = (currentValue < amount);
+                });
             });
-            minusBtns.forEach(btn => {
-                const amount = parseInt(btn.dataset.amount) || 1;
-                btn.disabled = (currentValue < amount);
-            });
-        });
+        }
     };
 
-    attributesContainer.addEventListener('click', (event) => {
-        const target = event.target;
-        if (!target.classList.contains('attr-btn') || target.disabled) return;
-
-        const row = target.closest('.attribute-row');
-        const attrName = row.dataset.attr;
-        const input = document.getElementById(attrName);
-        const valueEl = document.getElementById(`${attrName}Value`);
-        let currentValue = parseInt(input.value);
-        const amount = parseInt(target.dataset.amount) || 1;
-        
-        if (target.classList.contains('plus-btn')) {
-            const addAmount = Math.min(amount, maxPerAttr - currentValue, pointsLeft);
-            currentValue += addAmount;
-            pointsLeft -= addAmount;
-        } else if (target.classList.contains('minus-btn')) {
-            const subAmount = Math.min(amount, currentValue);
-            currentValue -= subAmount;
-            pointsLeft += subAmount;
-        }
-
-        input.value = currentValue;
-        valueEl.textContent = currentValue;
-        
-        updateUI();
-    });
-
-    updateUI();
+    app.init();
 });
 </script>
 
